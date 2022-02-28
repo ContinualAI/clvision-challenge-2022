@@ -1,0 +1,179 @@
+###
+# Adapted from Avalanche LvisDataset
+# https://github.com/ContinualAI/avalanche/tree/detection/avalanche/benchmarks/datasets/lvis
+#
+# Released under the MIT license, see: https://github.com/ContinualAI/avalanche/blob/master/LICENSE
+###
+
+from pathlib import Path
+from typing import List, Sequence, Union
+
+from PIL import Image
+from torch.utils.data import Dataset
+from torchvision.datasets.folder import default_loader
+
+from ego_objectron import EgoObjectron, EgoObjectronAnnotation, EgoObjectronImage
+import torch
+
+
+class ChallengeDatasetSample(Dataset):
+    """
+    The sample dataset. For internal use by challenge organizers only.
+    """
+
+    def __init__(
+        self,
+        root: Union[str, Path],
+        *,
+        classification_task=False,
+        transform=None,
+        loader=default_loader,
+        ego_api=None,
+        img_ids: List[int] = None,
+        bbox_format: str = 'ltrb'
+    ):
+        """
+        Instantiates the sample dataset.
+
+        :param root: The path to the images and annotation file.
+        :param classification_task: If True, a classification dataset will be created.
+        :param transform: The transformation to apply.
+        :param loader: The image loader. Defaults to PIL Image open.
+        :param ego_api: An EgoObjectron object. If not provided, annotations will be loaded from the json file found in
+            the root. Defaults to None.
+        :param img_ids: A list of image ids to use. If not None, only those images (a subset of the original dataset)
+            will be used. Defaults to None.
+        :param bbox_format: The bounding box format. Defaults to "ltrb" (Left, Top, Right, Bottom).
+        """
+        self.root: Path = Path(root)
+        self.transform = transform
+        self.loader = loader
+        self.bbox_crop = True
+        self.img_ids = img_ids
+        self.classification_task = classification_task  # TODO: implement
+        self.bbox_format = bbox_format
+
+        self.ego_api = ego_api
+
+        must_load_api = self.ego_api is None
+        must_load_img_ids = self.img_ids is None
+
+        # Load metadata
+        if must_load_api:
+            ann_json_path = str(self.root / "egoobjects_test.json")
+            self.ego_api = EgoObjectron(ann_json_path)
+
+        if must_load_img_ids:
+            self.img_ids = list(sorted(self.ego_api.get_img_ids()))
+
+        self.targets = EgoObjectronDetectionTargets(self.ego_api, self.img_ids)
+
+        # Try loading an image
+        if len(self.img_ids) > 0:
+            img_id = self.img_ids[0]
+            img_dict = self.ego_api.load_imgs(ids=[img_id])[0]
+            assert self._load_img(img_dict) is not None
+
+    def __getitem__(self, index):
+        """
+        Loads an instance given its index.
+
+        :param index: The index of the instance to retrieve.
+
+        :return: a (sample, target) tuple where the target is a
+            torchvision-style annotation for object detection
+            https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html
+        """
+        img_id = self.img_ids[index]
+        img_dict: EgoObjectronImage = self.ego_api.load_imgs(ids=[img_id])[0]
+        annotation_dicts = self.targets[index]
+
+        # Transform from EgoObjectron dictionary to torchvision-style target
+        num_objs = len(annotation_dicts)
+
+        boxes = []
+        labels = []
+        areas = []
+        for i in range(num_objs):
+            xmin = annotation_dicts[i]['bbox'][0]
+            ymin = annotation_dicts[i]['bbox'][1]
+            if self.bbox_format == 'ltrb':
+                # Left, Top, Right, Bottom
+                xmax = annotation_dicts[i]['bbox'][2]
+                ymax = annotation_dicts[i]['bbox'][3]
+
+                boxw = xmax - xmin
+                boxh = ymax - ymin
+            else:
+                # Left, Top, Width, Height
+                boxw = annotation_dicts[i]['bbox'][2]
+                boxh = annotation_dicts[i]['bbox'][3]
+
+                xmax = boxw + xmin
+                ymax = boxh + ymin
+
+            boxes.append([xmin, ymin, xmax, ymax])
+            labels.append(annotation_dicts[i]['category_id'])
+            areas.append(boxw * boxh)
+
+        if len(boxes) > 0:
+            boxes = torch.as_tensor(boxes, dtype=torch.float32)
+        else:
+            boxes = torch.empty((0, 4), dtype=torch.float32)
+        labels = torch.as_tensor(labels, dtype=torch.int64)
+
+        image_id = torch.tensor([img_id])
+        areas = torch.as_tensor(areas, dtype=torch.float32)
+        iscrowd = torch.zeros((num_objs,), dtype=torch.int64)
+
+        target = dict()
+        target["boxes"] = boxes
+        target["labels"] = labels
+        target["image_id"] = image_id
+        target["area"] = areas
+        target["iscrowd"] = iscrowd
+
+        img = self._load_img(img_dict)
+
+        if self.transform is not None:
+            img, target = self.transform(img, target)
+
+        return img, target
+
+    def __len__(self):
+        return len(self.img_ids)
+
+    def _load_img(self, img_dict):
+        img_url = img_dict['url']
+        splitted_url = img_url.split('/')
+        img_path = 'cltest/' + splitted_url[-1]
+        final_path = self.root / img_path  # <root>/cltest/<img_id>.jpg
+        return Image.open(str(final_path)).convert("RGB")
+
+
+class EgoObjectronDetectionTargets(Sequence[List[EgoObjectronAnnotation]]):
+    def __init__(
+            self,
+            ego_api: EgoObjectron,
+            img_ids: List[int] = None):
+        super(EgoObjectronDetectionTargets, self).__init__()
+        self.ego_api = ego_api
+        if img_ids is None:
+            img_ids = list(sorted(ego_api.get_img_ids()))
+
+        self.img_ids = img_ids
+
+    def __len__(self):
+        return len(self.img_ids)
+
+    def __getitem__(self, index):
+        img_id = self.img_ids[index]
+        annotation_ids = self.ego_api.get_ann_ids(img_ids=[img_id])
+        annotation_dicts: List[EgoObjectronAnnotation] = \
+            self.ego_api.load_anns(annotation_ids)
+        return annotation_dicts
+
+
+__all__ = [
+    'ChallengeDatasetSample'
+]
