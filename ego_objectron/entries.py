@@ -14,11 +14,12 @@ class EgoObjectronImage(TypedDict):
     width: int
     url: str
     gaia_id: Any  # Internal, ignore it
-    timestamp: float
+    timestamp: List[float]
     stream_ids: List[str]
-    group_id: int
+    group_id: str
     frame_id: int
     main_category: str
+    main_category_instance_ids: List[int]
     # date_captured: str
     # neg_category_ids: List[int]
     # license: int
