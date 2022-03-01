@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from torchvision.datasets.folder import default_loader
 
 from avalanche.benchmarks.utils import PathsDataset
-from ego_objectron import EgoObjectron
+from ego_objectron import EgoObjectron, EgoObjectronImage
 
 
 class EgoObjectronClassificationDataset(PathsDataset):
@@ -14,6 +14,7 @@ class EgoObjectronClassificationDataset(PathsDataset):
             root: Union[str, Path],
             ego_api: EgoObjectron,
             img_ids: List[int] = None,
+            bbox_margin: Union[float, int] = 0,
             transform=None,
             target_transform=None,
             loader=default_loader):
@@ -23,6 +24,27 @@ class EgoObjectronClassificationDataset(PathsDataset):
         image_triplets, img_ids = self.get_main_instances(
             ego_api, img_ids
         )
+
+        # Enlarge bounding box (to include some background in the image)
+        if bbox_margin > 0:
+            for image_triplet in image_triplets:
+                bbox = image_triplet[2]
+                img_dict: EgoObjectronImage = image_triplet[0]
+
+                if isinstance(bbox_margin, int):
+                    bbox_margin_w = bbox_margin
+                    bbox_margin_h = bbox_margin
+                else:  # Float number
+                    bbox_margin_w = int(img_dict['width'] * bbox_margin)
+                    bbox_margin_h = int(img_dict['height'] * bbox_margin)
+
+                max_bbox_margin_h = (img_dict['height'] - (bbox[0] + bbox[2]))
+                max_bbox_margin_w = (img_dict['width'] - (bbox[1] + bbox[3]))
+                bbox[2] += bbox_margin_h + min(bbox_margin_h, max_bbox_margin_h)  # Height
+                bbox[3] += bbox_margin_w + min(bbox_margin_w, max_bbox_margin_w)  # Width
+
+                bbox[0] = max(bbox[0] - bbox_margin_h, 0)  # Top
+                bbox[1] = max(bbox[1] - bbox_margin_w, 0)  # Left
 
         for image_triplet in image_triplets:
             img_dict = image_triplet[0]
@@ -84,6 +106,7 @@ if __name__ == '__main__':
     sample_classification_dataset = EgoObjectronClassificationDataset(
         root=sample_root,
         ego_api=ego_api,
+        bbox_margin=20
     )
 
     print(
