@@ -38,8 +38,16 @@ class EgoObjectronAnnotation(TypedDict):
     # segmentation: List[List[float]]  # Will not be supported
 
 
+class EgoObjectronJson(TypedDict):
+    info: Any
+    categories: List[EgoObjectronCategory]
+    images: List[EgoObjectronImage]
+    annotations: List[EgoObjectronAnnotation]
+
+
 __all__ = [
     'EgoObjectronCategory',
     'EgoObjectronImage',
-    'EgoObjectronAnnotation'
+    'EgoObjectronAnnotation',
+    'EgoObjectronJson'
 ]
