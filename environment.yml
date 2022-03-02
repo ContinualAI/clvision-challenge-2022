@@ -1,10 +1,10 @@
 ################################################################################
-# Copyright (c) 2021 ContinualAI.                                              #
+# Copyright (c) 2022 ContinualAI.                                              #
 # Copyrights licensed under the MIT License.                                   #
 # See the accompanying LICENSE file for terms.                                 #
 #                                                                              #
-# Date: 09-02-2021                                                             #
-# Author(s): Gabriele Graffieti                                                #
+# Date: 02-03-2022                                                             #
+# Author(s): Gabriele Graffieti, Lorenzo Pellegrini                            #
 # E-mail: contact@continualai.org                                              #
 # Website: avalanche.continualai.org                                           #
 ################################################################################
@@ -12,6 +12,7 @@
 name: clvision22-challenge
 channels:
 - conda-forge
+- pytorch
 dependencies:
 - psutil
 - conda-forge::gputil
@@ -24,6 +25,10 @@ dependencies:
 - tensorboard
 - conda-forge::pycocotools
 - pip
+- python=3.9
+- pytorch::pytorch>=1.8
+- pytorch::torchvision
+- pytorch::torchaudio
 - pip:
     - pytorchcv
     - gdown
