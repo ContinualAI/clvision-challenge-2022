@@ -65,9 +65,9 @@ class ChallengeDetectionDataset(Dataset):
         # Load metadata
         if must_load_api:
             if self.train:
-                ann_json_path = str(self.root / "egoobjects_test.json")
+                ann_json_path = str(self.root / "egoobjects_sample_train.json")
             else:
-                ann_json_path = str(self.root / "egoobjects_test.json")
+                ann_json_path = str(self.root / "egoobjects_sample_test.json")
             self.ego_api = EgoObjectron(ann_json_path)
 
         if must_load_img_ids:

@@ -12,12 +12,24 @@ class EgoObjectronClassificationDataset(PathsDataset):
     def __init__(
             self,
             root: Union[str, Path],
-            ego_api: EgoObjectron,
+            ego_api: EgoObjectron = None,
             img_ids: List[int] = None,
+            train=True,
             bbox_margin: Union[float, int] = 0,
             transform=None,
             target_transform=None,
             loader=default_loader):
+
+        self.train = train
+        root = Path(root)
+
+        if ego_api is None:
+            if self.train:
+                ann_json_path = str(root / "egoobjects_sample_train.json")
+            else:
+                ann_json_path = str(root / "egoobjects_sample_test.json")
+            ego_api = EgoObjectron(ann_json_path)
+
         if img_ids is None:
             img_ids = list(sorted(ego_api.get_img_ids()))
 
@@ -112,12 +124,12 @@ if __name__ == '__main__':
 
     sample_root: Path = Path.home() / '3rd_clvision_challenge'
     show_images = True
-    try_loading = False
+    try_loading = True
+    train = False
 
-    ego_api = EgoObjectron(str(sample_root / "egoobjects_test.json"))
     sample_classification_dataset = EgoObjectronClassificationDataset(
         root=sample_root,
-        ego_api=ego_api,
+        train=train,
         bbox_margin=20
     )
 
