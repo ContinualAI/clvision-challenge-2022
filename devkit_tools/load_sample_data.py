@@ -1,9 +1,13 @@
-import sys
+"""
+A simple script to show how to load and visualize the dataset data.
+
+The starting templates already define the correct data loading process.
+You can modify this script to analyze/explore the dataset.
+"""
+
 from pathlib import Path
 
 from ego_objectron import EgoObjectronVis
-
-sys.path.append(str(Path.cwd() / 'avalanche'))
 
 import matplotlib
 matplotlib.use('Agg')
@@ -17,8 +21,6 @@ from PIL import Image
 
 def main():
     sample_root: Path = Path.home() / '3rd_clvision_challenge'
-    # sample_json = sample_root / 'egoobjects_test.json'
-    # sample_images = sample_root / 'images'
 
     sample_dataset = ChallengeDetectionDataset(root=sample_root)
     ego_api = sample_dataset.ego_api

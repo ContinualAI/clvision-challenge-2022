@@ -8,7 +8,7 @@ from avalanche.benchmarks.utils import PathsDataset
 from ego_objectron import EgoObjectron, EgoObjectronImage
 
 
-class EgoObjectronClassificationDataset(PathsDataset):
+class ChallengeClassificationDataset(PathsDataset):
     def __init__(
             self,
             root: Union[str, Path],
@@ -67,7 +67,7 @@ class EgoObjectronClassificationDataset(PathsDataset):
             img_path = 'cltest/' + splitted_url[-1]
             image_triplet[0] = img_path
 
-        super(EgoObjectronClassificationDataset, self).__init__(
+        super(ChallengeClassificationDataset, self).__init__(
             root=root,
             files=image_triplets,
             transform=transform,
@@ -127,7 +127,7 @@ if __name__ == '__main__':
     try_loading = True
     train = False
 
-    sample_classification_dataset = EgoObjectronClassificationDataset(
+    sample_classification_dataset = ChallengeClassificationDataset(
         root=sample_root,
         train=train,
         bbox_margin=20
@@ -166,5 +166,5 @@ if __name__ == '__main__':
 
 
 __all__ = [
-    'EgoObjectronClassificationDataset'
+    'ChallengeClassificationDataset'
 ]
