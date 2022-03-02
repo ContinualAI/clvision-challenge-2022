@@ -16,6 +16,7 @@ The recommended setup steps are as follows:
 2. Clone the repo and create the conda environment:
 ```bash
 git clone --recurse-submodules https://github.com/ContinualAI/clvision-challenge-2022.git
+cd clvision-challenge-2022
 conda env create -f environment.yml
 ```
 
