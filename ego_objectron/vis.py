@@ -61,8 +61,8 @@ class EgoObjectronVis:
         ax.add_patch(
             plt.Rectangle(
                 (bbox[0], bbox[1]),
-                bbox[2] - bbox[0],
-                bbox[3] - bbox[1],
+                bbox[2],
+                bbox[3],
                 fill=False,
                 edgecolor=edgecolor,
                 linewidth=2.5,

@@ -40,8 +40,10 @@ class EgoObjectronClassificationDataset(PathsDataset):
 
                 max_bbox_margin_h = (img_dict['height'] - (bbox[0] + bbox[2]))
                 max_bbox_margin_w = (img_dict['width'] - (bbox[1] + bbox[3]))
-                bbox[2] += bbox_margin_h + min(bbox_margin_h, max_bbox_margin_h)  # Height
-                bbox[3] += bbox_margin_w + min(bbox_margin_w, max_bbox_margin_w)  # Width
+                bbox[2] += bbox_margin_h
+                bbox[3] += bbox_margin_w
+                bbox[2] += min(bbox_margin_h, max_bbox_margin_h)  # Height
+                bbox[3] += min(bbox_margin_w, max_bbox_margin_w)  # Width
 
                 bbox[0] = max(bbox[0] - bbox_margin_h, 0)  # Top
                 bbox[1] = max(bbox[1] - bbox_margin_w, 0)  # Left
@@ -87,7 +89,11 @@ class EgoObjectronClassificationDataset(PathsDataset):
             main_bbox[2] = main_bbox[3]
             main_bbox[3] = tmp
 
-            image_triplets.append([img_dict, main_annotation['instance_id'], main_bbox])
+            image_triplets.append(
+                [img_dict,
+                 main_annotation['instance_id'],
+                 main_bbox])
+
             all_instance_ids.add(main_annotation['instance_id'])
 
         class_label_to_instance_id = sorted(list(all_instance_ids))
@@ -100,7 +106,13 @@ class EgoObjectronClassificationDataset(PathsDataset):
 
 
 if __name__ == '__main__':
+    import torch
+    from torch.utils.data import DataLoader
+    from torchvision.transforms import ToTensor, Resize, Compose
+
     sample_root: Path = Path.home() / '3rd_clvision_challenge'
+    show_images = True
+    try_loading = False
 
     ego_api = EgoObjectron(str(sample_root / "egoobjects_test.json"))
     sample_classification_dataset = EgoObjectronClassificationDataset(
@@ -109,20 +121,36 @@ if __name__ == '__main__':
         bbox_margin=20
     )
 
-    print(
-        'The dataset contains',
-        len(set(sample_classification_dataset.targets)),
-        'main objects')
+    targets = torch.tensor(list(sample_classification_dataset.targets))
+    unique_targets, targets_count = torch.unique(targets, return_counts=True)
+
+    print('The dataset contains', len(unique_targets), 'main objects')
 
     print('Dataset len:', len(sample_classification_dataset))
+    for t, t_c in zip(unique_targets, targets_count):
+        print('Class', int(t), 'has', int(t_c), 'instances')
 
-    n_to_show = 5
-    for img_idx in range(n_to_show):
-        image, label = sample_classification_dataset[img_idx]
-        plt.title(f'Class label: {label}')
-        plt.imshow(image)
-        plt.show()
-        plt.clf()
+    if show_images:
+        n_to_show = 5
+        for img_idx in range(n_to_show):
+            image, label = sample_classification_dataset[img_idx]
+            plt.title(f'Class label: {label}')
+            plt.imshow(image)
+            plt.show()
+            plt.clf()
+
+    if try_loading:
+        sample_classification_dataset.transform = Compose(
+            [Resize((224, 224)), ToTensor()]
+        )
+
+        loader = DataLoader(
+            sample_classification_dataset,
+            batch_size=5,
+            num_workers=4)
+
+        for x, y in loader:
+            print('.', end='', flush=True)
 
 
 __all__ = [

@@ -2,7 +2,8 @@
 # Adapted from Avalanche LvisDataset
 # https://github.com/ContinualAI/avalanche/tree/detection/avalanche/benchmarks/datasets/lvis
 #
-# Released under the MIT license, see: https://github.com/ContinualAI/avalanche/blob/master/LICENSE
+# Released under the MIT license, see:
+# https://github.com/ContinualAI/avalanche/blob/master/LICENSE
 ###
 
 from pathlib import Path
@@ -12,11 +13,12 @@ from PIL import Image
 from torch.utils.data import Dataset
 from torchvision.datasets.folder import default_loader
 
-from ego_objectron import EgoObjectron, EgoObjectronAnnotation, EgoObjectronImage
+from ego_objectron import EgoObjectron, EgoObjectronAnnotation, \
+    EgoObjectronImage
 import torch
 
 
-class ChallengeDatasetSample(Dataset):
+class ChallengeDetectionDataset(Dataset):
     """
     The sample dataset. For internal use by challenge organizers only.
     """
@@ -25,32 +27,34 @@ class ChallengeDatasetSample(Dataset):
         self,
         root: Union[str, Path],
         *,
-        classification_task=False,
+        train=True,
         transform=None,
         loader=default_loader,
         ego_api=None,
         img_ids: List[int] = None,
-        bbox_format: str = 'ltrb'
+        bbox_format: str = 'ltwh'
     ):
         """
         Instantiates the sample dataset.
 
         :param root: The path to the images and annotation file.
-        :param classification_task: If True, a classification dataset will be created.
         :param transform: The transformation to apply.
         :param loader: The image loader. Defaults to PIL Image open.
-        :param ego_api: An EgoObjectron object. If not provided, annotations will be loaded from the json file found in
-            the root. Defaults to None.
-        :param img_ids: A list of image ids to use. If not None, only those images (a subset of the original dataset)
-            will be used. Defaults to None.
-        :param bbox_format: The bounding box format. Defaults to "ltrb" (Left, Top, Right, Bottom).
+        :param ego_api: An EgoObjectron object. If not provided, annotations
+            will be loaded from the json file found in the root. Defaults to
+            None.
+        :param img_ids: A list of image ids to use. If not None, only those
+            images (a subset of the original dataset) will be used. Defaults
+            to None.
+        :param bbox_format: The bounding box format. Defaults to "ltwh"
+            (Left, Top, Width, Height).
         """
         self.root: Path = Path(root)
+        self.train = train
         self.transform = transform
         self.loader = loader
         self.bbox_crop = True
         self.img_ids = img_ids
-        self.classification_task = classification_task  # TODO: implement
         self.bbox_format = bbox_format
 
         self.ego_api = ego_api
@@ -60,7 +64,10 @@ class ChallengeDatasetSample(Dataset):
 
         # Load metadata
         if must_load_api:
-            ann_json_path = str(self.root / "egoobjects_test.json")
+            if self.train:
+                ann_json_path = str(self.root / "egoobjects_test.json")
+            else:
+                ann_json_path = str(self.root / "egoobjects_test.json")
             self.ego_api = EgoObjectron(ann_json_path)
 
         if must_load_img_ids:
@@ -175,5 +182,5 @@ class EgoObjectronDetectionTargets(Sequence[List[EgoObjectronAnnotation]]):
 
 
 __all__ = [
-    'ChallengeDatasetSample'
+    'ChallengeDetectionDataset'
 ]

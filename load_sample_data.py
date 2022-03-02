@@ -8,7 +8,7 @@ sys.path.append(str(Path.cwd() / 'avalanche'))
 import matplotlib
 matplotlib.use('Agg')
 
-from devkit_tools import ChallengeDatasetSample
+from devkit_tools import ChallengeDetectionDataset
 
 import matplotlib.pyplot as plt
 from matplotlib import patches
@@ -20,7 +20,7 @@ def main():
     # sample_json = sample_root / 'egoobjects_test.json'
     # sample_images = sample_root / 'images'
 
-    sample_dataset = ChallengeDatasetSample(root=sample_root)
+    sample_dataset = ChallengeDetectionDataset(root=sample_root)
     ego_api = sample_dataset.ego_api
 
     print('Categories:', len(ego_api.get_cat_ids()))
@@ -37,8 +37,10 @@ def main():
 
     # Example 2: plot using EgoObjectronVis
     ego_vis = EgoObjectronVis(ego_api, img_dir=str(sample_root / 'cltest'))
-    for img_id in [194436326217796, 205990635045022, 206879634955351, 220388966895761, 231815002397446]:
-        fig, _ = ego_vis.vis_img(img_id=img_id, show_boxes=True, show_classes=True)
+    for img_id in [194436326217796, 205990635045022, 206879634955351,
+                   220388966895761, 231815002397446]:
+        fig, _ = ego_vis.vis_img(img_id=img_id, show_boxes=True,
+                                 show_classes=True)
         fig.savefig(f'img_{img_id}_vis.png')
         plt.close(fig)
 
