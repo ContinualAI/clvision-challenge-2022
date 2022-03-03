@@ -46,6 +46,9 @@ from devkit_tools.benchmarks.classification_benchmark import \
 
 from devkit_tools.challenge_constants import DEFAULT_DEMO_CLASS_ORDER_SEED
 
+from devkit_tools.metrics.classification_output_exporter import \
+    ClassificationOutputExporter
+
 # TODO: change this to the path where you downloaded (and extracted) the dataset
 DATASET_PATH = Path.home() / '3rd_clvision_challenge'
 
@@ -106,7 +109,11 @@ def main(args):
     # Avalanche already has a lot of plugins you can use!
     # Many mainstream continual learning approaches are available as plugins:
     # https://avalanche-api.continualai.org/en/latest/training.html#training-plugins
-    plugins: List[SupervisedPlugin] = []
+    #
+    mandatory_plugins = [ClassificationOutputExporter('./track1_results')]
+    plugins: List[SupervisedPlugin] = [
+        # ...
+    ] + mandatory_plugins
     # ---------
 
     # --- METRICS AND LOGGING
