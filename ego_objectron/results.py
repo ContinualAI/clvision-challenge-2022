@@ -40,27 +40,28 @@ class EgoObjectronResults(EgoObjectron):
         if max_dets >= 0:
             result_anns = self.limit_dets_per_image(result_anns, max_dets)
 
-        if "bbox" in result_anns[0]:
-            for id, ann in enumerate(result_anns):
-                x1, y1, w, h = ann["bbox"]
-                x2 = x1 + w
-                y2 = y1 + h
+        if len(result_anns) > 0:
+            if "bbox" in result_anns[0]:
+                for id, ann in enumerate(result_anns):
+                    x1, y1, w, h = ann["bbox"]
+                    x2 = x1 + w
+                    y2 = y1 + h
 
-                if "segmentation" not in ann:
-                    ann["segmentation"] = [[x1, y1, x1, y2, x2, y2, x2, y1]]
+                    if "segmentation" not in ann:
+                        ann["segmentation"] = [[x1, y1, x1, y2, x2, y2, x2, y1]]
 
-                ann["area"] = w * h
-                ann["id"] = id + 1
+                    ann["area"] = w * h
+                    ann["id"] = id + 1
 
-        elif "segmentation" in result_anns[0]:
-            for id, ann in enumerate(result_anns):
-                # Only support compressed RLE format as segmentation results
-                ann["area"] = mask_utils.area(ann["segmentation"])
+            elif "segmentation" in result_anns[0]:
+                for id, ann in enumerate(result_anns):
+                    # Only support compressed RLE format as segmentation results
+                    ann["area"] = mask_utils.area(ann["segmentation"])
 
-                if "bbox" not in ann:
-                    ann["bbox"] = mask_utils.toBbox(ann["segmentation"])
+                    if "bbox" not in ann:
+                        ann["bbox"] = mask_utils.toBbox(ann["segmentation"])
 
-                ann["id"] = id + 1
+                    ann["id"] = id + 1
 
         self.dataset["annotations"] = result_anns
         self._create_index()

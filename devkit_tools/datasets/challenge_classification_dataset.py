@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 from torchvision.datasets.folder import default_loader
 
 from avalanche.benchmarks.utils import PathsDataset
+from devkit_tools.challenge_constants import DEFAULT_DEMO_TRAIN_JSON, \
+    DEFAULT_DEMO_TEST_JSON
 from ego_objectron import EgoObjectron, EgoObjectronImage
 
 
@@ -18,23 +20,25 @@ class ChallengeClassificationDataset(PathsDataset):
             bbox_margin: Union[float, int] = 0,
             transform=None,
             target_transform=None,
-            loader=default_loader):
+            loader=default_loader,
+            *,
+            instance_level=True):
 
         self.train = train
         root = Path(root)
 
         if ego_api is None:
             if self.train:
-                ann_json_path = str(root / "egoobjects_sample_train.json")
+                ann_json_path = str(root / DEFAULT_DEMO_TRAIN_JSON)
             else:
-                ann_json_path = str(root / "egoobjects_sample_test.json")
+                ann_json_path = str(root / DEFAULT_DEMO_TEST_JSON)
             ego_api = EgoObjectron(ann_json_path)
 
         if img_ids is None:
             img_ids = list(sorted(ego_api.get_img_ids()))
 
-        image_triplets, img_ids = self.get_main_instances(
-            ego_api, img_ids
+        image_triplets, self.img_ids = self.get_main_instances(
+            ego_api, img_ids, instance_level=instance_level
         )
 
         # Enlarge bounding box (to include some background in the image)
@@ -76,7 +80,11 @@ class ChallengeClassificationDataset(PathsDataset):
         )
 
     @staticmethod
-    def get_main_instances(ego_api: EgoObjectron, img_ids: List[int]):
+    def get_main_instances(
+            ego_api: EgoObjectron,
+            img_ids: List[int],
+            *,
+            instance_level: bool = True):
         image_triplets = []
         all_instance_ids = set()
         img_ids_with_main_ann = []
@@ -101,12 +109,17 @@ class ChallengeClassificationDataset(PathsDataset):
             main_bbox[2] = main_bbox[3]
             main_bbox[3] = tmp
 
+            if instance_level:
+                main_annotation_class = main_annotation['instance_id']
+            else:
+                main_annotation_class = main_annotation['category_id']
+
             image_triplets.append(
                 [img_dict,
-                 main_annotation['instance_id'],
+                 main_annotation_class,
                  main_bbox])
 
-            all_instance_ids.add(main_annotation['instance_id'])
+            all_instance_ids.add(main_annotation_class)
 
         class_label_to_instance_id = sorted(list(all_instance_ids))
 

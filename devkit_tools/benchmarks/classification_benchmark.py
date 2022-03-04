@@ -6,6 +6,7 @@ from avalanche.benchmarks.utils import AvalancheDataset
 from devkit_tools import ChallengeClassificationDataset
 from devkit_tools.challenge_constants import \
     DEMO_CLASSIFICATION_FORCED_TRANSFORMS
+from ego_objectron import EgoObjectron
 
 
 def demo_classification_benchmark(
@@ -15,7 +16,9 @@ def demo_classification_benchmark(
         train_transform=None,
         eval_transform=None,
         train_json_name=None,
-        test_json_name=None):
+        test_json_name=None,
+        instance_level=True,
+        n_exps=15):
 
     base_transforms = dict(
         train=(DEMO_CLASSIFICATION_FORCED_TRANSFORMS, None),
@@ -24,24 +27,26 @@ def demo_classification_benchmark(
 
     ego_api = None
     if train_json_name is not None:
-        ego_api = Path(dataset_path) / train_json_name
+        ego_api = EgoObjectron(str(Path(dataset_path) / train_json_name))
 
     train_dataset = ChallengeClassificationDataset(
         dataset_path,
         ego_api=ego_api,
         train=True,
         bbox_margin=20,
+        instance_level=instance_level
     )
 
     ego_api = None
     if train_json_name is not None:
-        ego_api = Path(dataset_path) / test_json_name
+        ego_api = EgoObjectron(str(Path(dataset_path) / test_json_name))
 
     test_dataset = ChallengeClassificationDataset(
         dataset_path,
         ego_api=ego_api,
         train=False,
         bbox_margin=20,
+        instance_level=instance_level
     )
 
     avl_train_dataset = AvalancheDataset(
@@ -59,7 +64,7 @@ def demo_classification_benchmark(
     return nc_benchmark(
         avl_train_dataset,
         avl_test_dataset,
-        n_experiences=15,
+        n_experiences=n_exps,
         task_labels=False,
         seed=class_order_seed,
         shuffle=True,
