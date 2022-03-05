@@ -69,7 +69,7 @@ class ChallengeClassificationDataset(PathsDataset):
             img_url = img_dict['url']
             splitted_url = img_url.split('/')
             img_path = 'images/' + splitted_url[-1]
-            if not (self.root / img_path).exists():
+            if not (root / img_path).exists():
                 img_path = 'cltest/' + splitted_url[-1]
             image_triplet[0] = img_path
 
