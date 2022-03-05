@@ -153,8 +153,12 @@ class ChallengeDetectionDataset(Dataset):
     def _load_img(self, img_dict):
         img_url = img_dict['url']
         splitted_url = img_url.split('/')
-        img_path = 'cltest/' + splitted_url[-1]
-        final_path = self.root / img_path  # <root>/cltest/<img_id>.jpg
+        img_path = 'images/' + splitted_url[-1]
+        img_path_alt = 'cltest/' + splitted_url[-1]
+
+        final_path = self.root / img_path  # <root>/images/<img_id>.jpg
+        if not final_path.exists():
+            final_path = self.root / img_path_alt
         return Image.open(str(final_path)).convert("RGB")
 
 

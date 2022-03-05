@@ -38,7 +38,7 @@ def demo_classification_benchmark(
     )
 
     ego_api = None
-    if train_json_name is not None:
+    if test_json_name is not None:
         ego_api = EgoObjectron(str(Path(dataset_path) / test_json_name))
 
     test_dataset = ChallengeClassificationDataset(
