@@ -21,18 +21,23 @@ T = TypeVar('T')
 
 
 class EgoObjectron:
-    def __init__(self, annotation_path):
+    def __init__(self, annotation_path, annotation_dict=None):
         """Class for reading and visualizing annotations.
         Args:
-            annotation_path (str): location of annotation file
+            annotation_path (str): Location of annotation file
+            annotation_dict (dict): Already loaded annotations.
+                If set, overrides annotation_path.
         """
         self.logger = logging.getLogger(__name__)
         self.logger.info("Loading annotations.")
 
-        self.dataset = self._load_json(annotation_path)
+        if annotation_dict is None:
+            self.dataset = self._load_json(annotation_path)
+        else:
+            self.dataset = annotation_dict
 
         assert (
-            type(self.dataset) == dict
+                type(self.dataset) == dict
         ), "Annotation file format {} not supported.".format(type(self.dataset))
         self._create_index()
 
