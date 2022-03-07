@@ -13,7 +13,7 @@ from avalanche.evaluation.metric_results import MetricValue
 from avalanche.evaluation.metric_utils import get_metric_name
 from avalanche.evaluation.metrics.detection import TensorEncoder
 from devkit_tools.metrics.ego_evaluator import EgoEvaluator
-from ego_objectron import EgoObjectron
+from ego_objects import EgoObjects
 
 
 class EgoMetrics(PluginMetric[str]):
@@ -127,9 +127,9 @@ def get_detection_api_from_dataset(dataset):
     for _ in range(100):
         if isinstance(dataset, CocoDetection):
             break
-        elif isinstance(dataset, (LVIS, EgoObjectron)):
+        elif isinstance(dataset, (LVIS, EgoObjects)):
             break
-        elif isinstance(dataset, EgoObjectron):
+        elif isinstance(dataset, EgoObjects):
             break
         elif hasattr(dataset, 'lvis_api'):
             break
@@ -146,7 +146,7 @@ def get_detection_api_from_dataset(dataset):
 
     if isinstance(dataset, CocoDetection):
         return dataset.coco
-    if isinstance(dataset, (LVIS, EgoObjectron)):
+    if isinstance(dataset, (LVIS, EgoObjects)):
         return dataset
     if hasattr(dataset, 'lvis_api'):
         return dataset.lvis_api

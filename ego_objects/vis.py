@@ -4,17 +4,18 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from ego_objectron.colormap import colormap
+from ego_objects.colormap import colormap
 
-from ego_objectron import EgoObjectron, EgoObjectronResults
+from ego_objects import EgoObjects, EgoObjectsResults
 
 
-class EgoObjectronVis:
+class EgoObjectsVis:
     def __init__(self, ego_gt, ego_dt=None, img_dir=None, dpi=75):
-        """Constructor for EgoObjectronVis.
+        """Constructor for EgoObjectsVis.
         Args:
-            ego_gt (EgoObjectron class instance, or str containing path of annotation file)
-            ego_dt (EgoObjectronResult class instance, or str containing path of result file,
+            ego_gt (EgoObjects class instance, or str containing path of annotation file)
+            ego_dt (EgoObjectsResult class instance, or str containing path
+            of result file,
             or list of dict)
             img_dir (str): path of folder containing all images. If None, the image
             to be displayed will be downloaded to the current working dir.
@@ -22,18 +23,18 @@ class EgoObjectronVis:
         """
         self.logger = logging.getLogger(__name__)
 
-        if isinstance(ego_gt, EgoObjectron):
+        if isinstance(ego_gt, EgoObjects):
             self.ego_gt = ego_gt
         elif isinstance(ego_gt, str):
-            self.ego_gt = EgoObjectron(ego_gt)
+            self.ego_gt = EgoObjects(ego_gt)
         else:
             raise TypeError("Unsupported type {} of ego_gt.".format(ego_gt))
 
         if ego_dt is not None:
-            if isinstance(ego_dt, EgoObjectronResults):
+            if isinstance(ego_dt, EgoObjectsResults):
                 self.ego_dt = ego_dt
             elif isinstance(ego_dt, (str, list)):
-                self.ego_dt = EgoObjectronResults(self.ego_gt, ego_dt)
+                self.ego_dt = EgoObjectsResults(self.ego_gt, ego_dt)
             else:
                 raise TypeError("Unsupported type {} of ego_dt.".format(ego_dt))
         else:

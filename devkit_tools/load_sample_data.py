@@ -7,7 +7,7 @@ You can modify this script to analyze/explore the dataset.
 
 from pathlib import Path
 
-from ego_objectron import EgoObjectronVis
+from ego_objects import EgoObjectsVis
 
 import matplotlib
 matplotlib.use('Agg')
@@ -37,8 +37,8 @@ def main():
         plt.show()
         plt.clf()
 
-    # Example 2: plot using EgoObjectronVis
-    ego_vis = EgoObjectronVis(ego_api, img_dir=str(sample_root / 'cltest'))
+    # Example 2: plot using EgoObjectsVis
+    ego_vis = EgoObjectsVis(ego_api, img_dir=str(sample_root / 'cltest'))
     for img_id in ego_api.get_img_ids()[:5]:
         fig, _ = ego_vis.vis_img(img_id=img_id, show_boxes=True,
                                  show_classes=True)

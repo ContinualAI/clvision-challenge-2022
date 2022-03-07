@@ -13,7 +13,7 @@ from devkit_tools.benchmarks.detection_scenario import DetectionCLScenario, \
 from devkit_tools.challenge_constants import \
     DEMO_DETECTION_FORCED_TRANSFORMS, DEFAULT_DEMO_TEST_JSON, \
     DEFAULT_DEMO_TRAIN_JSON, DEMO_DETECTION_EXPERIENCES
-from ego_objectron import EgoObjectron
+from ego_objects import EgoObjects
 
 
 def demo_detection_benchmark(
@@ -38,11 +38,11 @@ def demo_detection_benchmark(
     # Create aligned datasets
     if train_json_name is None:
         train_json_name = DEFAULT_DEMO_TRAIN_JSON
-    train_ego_api = EgoObjectron(str(Path(dataset_path) / train_json_name))
+    train_ego_api = EgoObjects(str(Path(dataset_path) / train_json_name))
 
     if test_json_name is None:
         test_json_name = DEFAULT_DEMO_TEST_JSON
-    test_ego_api = EgoObjectron(str(Path(dataset_path) / test_json_name))
+    test_ego_api = EgoObjects(str(Path(dataset_path) / test_json_name))
 
     train_dataset = ChallengeClassificationDataset(
         dataset_path,

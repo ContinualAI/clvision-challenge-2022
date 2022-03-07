@@ -1,14 +1,14 @@
 from typing import List, TypedDict, Any
 
 
-class EgoObjectronCategory(TypedDict):
+class EgoObjectsCategory(TypedDict):
     id: int
     name: str
     image_count: int
     instance_count: int
 
 
-class EgoObjectronImage(TypedDict):
+class EgoObjectsImage(TypedDict):
     id: int
     height: int
     width: int
@@ -28,7 +28,7 @@ class EgoObjectronImage(TypedDict):
     # not_exhaustive_category_ids: List[int]
 
 
-class EgoObjectronAnnotation(TypedDict):
+class EgoObjectsAnnotation(TypedDict):
     id: int
     image_id: int
     bbox: List[float]
@@ -38,16 +38,16 @@ class EgoObjectronAnnotation(TypedDict):
     # segmentation: List[List[float]]  # Will not be supported
 
 
-class EgoObjectronJson(TypedDict):
+class EgoObjectsJson(TypedDict):
     info: Any
-    categories: List[EgoObjectronCategory]
-    images: List[EgoObjectronImage]
-    annotations: List[EgoObjectronAnnotation]
+    categories: List[EgoObjectsCategory]
+    images: List[EgoObjectsImage]
+    annotations: List[EgoObjectsAnnotation]
 
 
 __all__ = [
-    'EgoObjectronCategory',
-    'EgoObjectronImage',
-    'EgoObjectronAnnotation',
-    'EgoObjectronJson'
+    'EgoObjectsCategory',
+    'EgoObjectsImage',
+    'EgoObjectsAnnotation',
+    'EgoObjectsJson'
 ]

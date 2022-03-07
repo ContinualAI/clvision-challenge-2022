@@ -4,20 +4,20 @@ from collections import defaultdict
 
 import pycocotools.mask as mask_utils
 
-from ego_objectron.ego_objectron import EgoObjectron
+from ego_objects.ego_objects import EgoObjects
 
 
-class EgoObjectronResults(EgoObjectron):
+class EgoObjectsResults(EgoObjects):
     def __init__(self, ego_gt, results, max_dets=300):
-        """Constructor for EgoObjectron results.
+        """Constructor for EgoObjects results.
         Args:
-            ego_gt (EgoObjectron class instance, or str containing path of
+            ego_gt (EgoObjects class instance, or str containing path of
             annotation file)
             results (str containing path of result file or a list of dicts)
             max_dets (int):  max number of detections per image. The official
-            value of max_dets for EgoObjectron is 300.
+            value of max_dets for EgoObjects is 300.
         """
-        if isinstance(ego_gt, EgoObjectron):
+        if isinstance(ego_gt, EgoObjects):
             self.dataset = deepcopy(ego_gt.dataset)
         elif isinstance(ego_gt, str):
             self.dataset = self._load_json(ego_gt)
@@ -70,7 +70,7 @@ class EgoObjectronResults(EgoObjectron):
 
         assert set(img_ids_in_result) == (
             set(img_ids_in_result) & set(self.get_img_ids())
-        ), "Results do not correspond to current EgoObjectron set."
+        ), "Results do not correspond to current EgoObjects set."
 
     def limit_dets_per_image(self, anns, max_dets):
         img_ann = defaultdict(list)

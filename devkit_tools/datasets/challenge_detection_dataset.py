@@ -15,8 +15,8 @@ from torchvision.datasets.folder import default_loader
 
 from devkit_tools.challenge_constants import DEFAULT_DEMO_TRAIN_JSON, \
     DEFAULT_DEMO_TEST_JSON
-from ego_objectron import EgoObjectron, EgoObjectronAnnotation, \
-    EgoObjectronImage
+from ego_objects import EgoObjects, EgoObjectsAnnotation, \
+    EgoObjectsImage
 import torch
 
 
@@ -43,7 +43,7 @@ class ChallengeDetectionDataset(Dataset):
         :param root: The path to the images and annotation file.
         :param transform: The transformation to apply.
         :param loader: The image loader. Defaults to PIL Image open.
-        :param ego_api: An EgoObjectron object. If not provided, annotations
+        :param ego_api: An EgoObjects object. If not provided, annotations
             will be loaded from the json file found in the root. Defaults to
             None.
         :param img_ids: A list of image ids to use. If not None, only those
@@ -75,12 +75,12 @@ class ChallengeDetectionDataset(Dataset):
                 ann_json_path = str(self.root / DEFAULT_DEMO_TRAIN_JSON)
             else:
                 ann_json_path = str(self.root / DEFAULT_DEMO_TEST_JSON)
-            self.ego_api = EgoObjectron(ann_json_path)
+            self.ego_api = EgoObjects(ann_json_path)
 
         if must_load_img_ids:
             self.img_ids = list(sorted(self.ego_api.get_img_ids()))
 
-        self.targets = EgoObjectronDetectionTargets(
+        self.targets = EgoObjectsDetectionTargets(
             self.ego_api, self.img_ids,
             categories_id_mapping=categories_id_mapping)
 
@@ -101,10 +101,10 @@ class ChallengeDetectionDataset(Dataset):
             https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html
         """
         img_id = self.img_ids[index]
-        img_dict: EgoObjectronImage = self.ego_api.load_imgs(ids=[img_id])[0]
+        img_dict: EgoObjectsImage = self.ego_api.load_imgs(ids=[img_id])[0]
         annotation_dicts = self.targets[index]
 
-        # Transform from EgoObjectron dictionary to torchvision-style target
+        # Transform from EgoObjects dictionary to torchvision-style target
         num_objs = len(annotation_dicts)
 
         boxes = []
@@ -171,13 +171,13 @@ class ChallengeDetectionDataset(Dataset):
         return Image.open(str(final_path)).convert("RGB")
 
 
-class EgoObjectronDetectionTargets(Sequence[List[EgoObjectronAnnotation]]):
+class EgoObjectsDetectionTargets(Sequence[List[EgoObjectsAnnotation]]):
     def __init__(
             self,
-            ego_api: EgoObjectron,
+            ego_api: EgoObjects,
             img_ids: List[int] = None,
             categories_id_mapping: List[int] = None):
-        super(EgoObjectronDetectionTargets, self).__init__()
+        super(EgoObjectsDetectionTargets, self).__init__()
         self.ego_api = ego_api
 
         if categories_id_mapping is not None:
@@ -198,15 +198,15 @@ class EgoObjectronDetectionTargets(Sequence[List[EgoObjectronAnnotation]]):
     def __getitem__(self, index):
         img_id = self.img_ids[index]
         annotation_ids = self.ego_api.get_ann_ids(img_ids=[img_id])
-        annotation_dicts: List[EgoObjectronAnnotation] = \
+        annotation_dicts: List[EgoObjectsAnnotation] = \
             self.ego_api.load_anns(annotation_ids)
 
         if self.reversed_mapping is None:
             return annotation_dicts
 
-        mapped_anns: List[EgoObjectronAnnotation] = []
+        mapped_anns: List[EgoObjectsAnnotation] = []
         for ann_dict in annotation_dicts:
-            ann_dict: EgoObjectronAnnotation = dict(ann_dict)
+            ann_dict: EgoObjectsAnnotation = dict(ann_dict)
             ann_dict['category_id'] = \
                 self.reversed_mapping[ann_dict['category_id']]
             mapped_anns.append(ann_dict)

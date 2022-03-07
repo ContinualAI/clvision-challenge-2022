@@ -1,9 +1,9 @@
 """
-API for accessing EgoObjectron Dataset.
+API for accessing EgoObjects Dataset.
 
-EgoObjectron API is a Python API that assists in loading, parsing and visualizing
-the annotations in EgoObjectron. In addition to this API, please download
-images and annotations from the EgoObjectron website.
+EgoObjects API is a Python API that assists in loading, parsing and visualizing
+the annotations in EgoObjects. In addition to this API, please download
+images and annotations from the EgoObjects website.
 """
 
 import json
@@ -15,12 +15,12 @@ from urllib.request import urlretrieve
 
 import pycocotools.mask as mask_utils
 
-from ego_objectron import EgoObjectronAnnotation, EgoObjectronCategory, EgoObjectronImage
+from ego_objects import EgoObjectsAnnotation, EgoObjectsCategory, EgoObjectsImage
 
 T = TypeVar('T')
 
 
-class EgoObjectron:
+class EgoObjects:
     def __init__(self, annotation_path, annotation_dict=None):
         """Class for reading and visualizing annotations.
         Args:
@@ -71,9 +71,9 @@ class EgoObjectron:
         self.img_ann_map = defaultdict(list)
         self.cat_img_map = defaultdict(list)
 
-        self.anns: Dict[int, EgoObjectronAnnotation] = {}
-        self.cats: Dict[int, EgoObjectronCategory] = {}
-        self.imgs: Dict[int, EgoObjectronImage] = {}
+        self.anns: Dict[int, EgoObjectsAnnotation] = {}
+        self.cats: Dict[int, EgoObjectsCategory] = {}
+        self.imgs: Dict[int, EgoObjectsImage] = {}
 
         for ann in self.dataset["annotations"]:
             self.img_ann_map[ann["image_id"]].append(ann)
@@ -101,7 +101,7 @@ class EgoObjectron:
         Returns:
             ids (int array): integer array of ann ids
         """
-        anns: List[EgoObjectronAnnotation] = []
+        anns: List[EgoObjectsAnnotation] = []
         if img_ids is not None:
             for img_id in img_ids:
                 anns.extend(self.img_ann_map[img_id])
@@ -156,7 +156,7 @@ class EgoObjectron:
         else:
             return [_dict[id] for id in ids]
 
-    def load_anns(self, ids=None) -> List[EgoObjectronAnnotation]:
+    def load_anns(self, ids=None) -> List[EgoObjectsAnnotation]:
         """Load anns with the specified ids. If ids=None load all anns.
 
         Args:
@@ -167,7 +167,7 @@ class EgoObjectron:
         """
         return self._load_helper(self.anns, ids)
 
-    def load_cats(self, ids) -> List[EgoObjectronCategory]:
+    def load_cats(self, ids) -> List[EgoObjectsCategory]:
         """Load categories with the specified ids. If ids=None load all
         categories.
 
@@ -179,7 +179,7 @@ class EgoObjectron:
         """
         return self._load_helper(self.cats, ids)
 
-    def load_imgs(self, ids) -> List[EgoObjectronImage]:
+    def load_imgs(self, ids) -> List[EgoObjectsImage]:
         """Load categories with the specified ids. If ids=None load all images.
 
         Args:

@@ -6,7 +6,7 @@ from avalanche.benchmarks.utils import AvalancheDataset
 from devkit_tools import ChallengeClassificationDataset
 from devkit_tools.challenge_constants import \
     DEMO_CLASSIFICATION_FORCED_TRANSFORMS, DEMO_CLASSIFICATION_EXPERIENCES
-from ego_objectron import EgoObjectron
+from ego_objects import EgoObjects
 
 
 def demo_classification_benchmark(
@@ -27,7 +27,7 @@ def demo_classification_benchmark(
 
     ego_api = None
     if train_json_name is not None:
-        ego_api = EgoObjectron(str(Path(dataset_path) / train_json_name))
+        ego_api = EgoObjects(str(Path(dataset_path) / train_json_name))
 
     train_dataset = ChallengeClassificationDataset(
         dataset_path,
@@ -39,7 +39,7 @@ def demo_classification_benchmark(
 
     ego_api = None
     if test_json_name is not None:
-        ego_api = EgoObjectron(str(Path(dataset_path) / test_json_name))
+        ego_api = EgoObjects(str(Path(dataset_path) / test_json_name))
 
     test_dataset = ChallengeClassificationDataset(
         dataset_path,

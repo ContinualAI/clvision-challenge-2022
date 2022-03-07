@@ -7,14 +7,14 @@ from torchvision.datasets.folder import default_loader
 from avalanche.benchmarks.utils import PathsDataset
 from devkit_tools.challenge_constants import DEFAULT_DEMO_TRAIN_JSON, \
     DEFAULT_DEMO_TEST_JSON
-from ego_objectron import EgoObjectron, EgoObjectronImage
+from ego_objects import EgoObjects, EgoObjectsImage
 
 
 class ChallengeClassificationDataset(PathsDataset):
     def __init__(
             self,
             root: Union[str, Path],
-            ego_api: EgoObjectron = None,
+            ego_api: EgoObjects = None,
             img_ids: List[int] = None,
             train=True,
             bbox_margin: Union[float, int] = 0,
@@ -32,7 +32,7 @@ class ChallengeClassificationDataset(PathsDataset):
                 ann_json_path = str(root / DEFAULT_DEMO_TRAIN_JSON)
             else:
                 ann_json_path = str(root / DEFAULT_DEMO_TEST_JSON)
-            ego_api = EgoObjectron(ann_json_path)
+            ego_api = EgoObjects(ann_json_path)
 
         if img_ids is None:
             img_ids = list(sorted(ego_api.get_img_ids()))
@@ -45,7 +45,7 @@ class ChallengeClassificationDataset(PathsDataset):
         if bbox_margin > 0:
             for image_triplet in image_triplets:
                 bbox = image_triplet[2]
-                img_dict: EgoObjectronImage = image_triplet[0]
+                img_dict: EgoObjectsImage = image_triplet[0]
 
                 if isinstance(bbox_margin, int):
                     bbox_margin_w = bbox_margin
@@ -83,7 +83,7 @@ class ChallengeClassificationDataset(PathsDataset):
 
     @staticmethod
     def get_main_instances(
-            ego_api: EgoObjectron,
+            ego_api: EgoObjects,
             img_ids: List[int],
             *,
             instance_level: bool = True):

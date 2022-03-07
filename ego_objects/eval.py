@@ -7,16 +7,17 @@ import numpy as np
 
 import pycocotools.mask as mask_utils
 
-from ego_objectron.ego_objectron import EgoObjectron
-from ego_objectron.results import EgoObjectronResults
+from ego_objects.ego_objects import EgoObjects
+from ego_objects.results import EgoObjectsResults
 
 
-class EgoObjectronEval:
+class EgoObjectsEval:
     def __init__(self, ego_gt, ego_dt, iou_type="segm"):
-        """Constructor for EgoObjectronEval.
+        """Constructor for EgoObjectsEval.
         Args:
-            ego_gt (EgoObjectron class instance, or str containing path of annotation file)
-            ego_dt (EgoObjectronResult class instance, or str containing path of result file,
+            ego_gt (EgoObjects class instance, or str containing path of annotation file)
+            ego_dt (EgoObjectsResult class instance, or str containing path
+            of result file,
             or list of dict)
             iou_type (str): segm or bbox evaluation
         """
@@ -25,17 +26,17 @@ class EgoObjectronEval:
         if iou_type not in ["bbox", "segm"]:
             raise ValueError("iou_type: {} is not supported.".format(iou_type))
 
-        if isinstance(ego_gt, EgoObjectron):
+        if isinstance(ego_gt, EgoObjects):
             self.ego_gt = ego_gt
         elif isinstance(ego_gt, str):
-            self.ego_gt = EgoObjectron(ego_gt)
+            self.ego_gt = EgoObjects(ego_gt)
         else:
             raise TypeError("Unsupported type {} of ego_gt.".format(ego_gt))
 
-        if isinstance(ego_dt, EgoObjectronResults):
+        if isinstance(ego_dt, EgoObjectsResults):
             self.ego_dt = ego_dt
         elif isinstance(ego_dt, (str, list)):
-            self.ego_dt = EgoObjectronResults(self.ego_gt, ego_dt)
+            self.ego_dt = EgoObjectsResults(self.ego_gt, ego_dt)
         else:
             raise TypeError("Unsupported type {} of ego_dt.".format(ego_dt))
 
@@ -276,7 +277,7 @@ class EgoObjectronEval:
                 dt_m[iou_thr_idx, dt_idx] = gt[m]["id"]
                 gt_m[iou_thr_idx, m] = _dt["id"]
 
-        # For EgoObjectron we will ignore any unmatched detection if that category was
+        # For EgoObjects we will ignore any unmatched detection if that category was
         # not exhaustively annotated in gt.
         dt_ig_mask = [
             d["area"] < area_rng[0]
@@ -526,7 +527,7 @@ class EgoObjectronEval:
 
 class Params:
     def __init__(self, iou_type):
-        """Params for EgoObjectron evaluation API."""
+        """Params for EgoObjects evaluation API."""
         self.img_ids = []
         self.cat_ids = []
         # np.arange causes trouble.  the data point on arange is slightly

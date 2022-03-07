@@ -8,11 +8,11 @@ import pycocotools.mask as mask_util
 import torch
 import torch.distributed as dist
 
-from ego_objectron import EgoObjectron, EgoObjectronResults, EgoObjectronEval
+from ego_objects import EgoObjects, EgoObjectsResults, EgoObjectsEval
 
 
 class EgoEvaluator:
-    def __init__(self, ego_gt: EgoObjectron, iou_types: List[str]):
+    def __init__(self, ego_gt: EgoObjects, iou_types: List[str]):
         assert isinstance(iou_types, (list, tuple))
         self.ego_gt = ego_gt
         self.iou_types = iou_types
@@ -68,9 +68,9 @@ class EgoEvaluator:
                 else:
                     ego_results = all_preds
 
-                ego_results = EgoObjectronResults(
+                ego_results = EgoObjectsResults(
                     gt_subset, ego_results, max_dets=max_dets_per_image)
-                ego_eval = EgoObjectronEval(gt_subset, ego_results, iou_type)
+                ego_eval = EgoObjectsEval(gt_subset, ego_results, iou_type)
                 ego_eval.params.img_ids = list(set(eval_imgs))
                 ego_eval.run()
                 self.ego_eval_per_iou[iou_type] = ego_eval
@@ -162,9 +162,9 @@ class EgoEvaluator:
         return DictEgo(subset)
 
 
-class DictEgo(EgoObjectron):
+class DictEgo(EgoObjects):
     """
-    Child class of EgoObjectron that allows for the creation of EgoObjectron
+    Child class of EgoObjects that allows for the creation of EgoObjects
     objects from a dictionary.
     """
 
