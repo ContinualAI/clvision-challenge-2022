@@ -4,12 +4,12 @@ This is the official starting repository for the **Continual Learning Challenge*
 
 Please refer to the [**challenge website**](https://sites.google.com/view/clvision2022/challenge) for more details!
 
-The Slack channel is now open: TBD
+The Slack channel #3rd_clvision_challenge is now open in the ContinualAI Slack: [join here](https://continualai.slack.com/join/shared_invite/enQtNjQxNDYwMzkxNzk0LTBhYjg2MjM0YTM2OWRkNDYzOGE0ZTIzNDQ0ZGMzNDE3ZGUxNTZmNmM1YzJiYzgwMTkyZDQxYTlkMTI3NzZkNjU#/shared-invite/email).
 
 **We are gathering feedback about the devkit.** Join the Slack channel or open an issue directly on this repo!
 
 ## Getting started
-The devkit is based on the [Avalanche library](https://github.com/ContinualAI/avalanche). We warmly recommend looking at the [documentation](https://avalanche.continualai.org/) (especially the ["Zero to Hero"](https://avalanche.continualai.org/from-zero-to-hero-tutorial/01_introduction) tutorials) if this is the first time you use it!
+The devkit is based on the [Avalanche library](https://github.com/ContinualAI/avalanche). We warmly recommend looking at the [documentation](https://avalanche.continualai.org/) (especially the ["Zero To Hero tutorials"](https://avalanche.continualai.org/from-zero-to-hero-tutorial/01_introduction)) if this is your first time using it!
 
 For the demo track, Avalanche is added as a Git submodule of this repository. The submodule points to a specific commit of a branch we specifically created for the challenge.
 
@@ -28,7 +28,7 @@ conda env create -f environment.yml
    1. For Jetbrains IDEs (PyCharm), this can be done from the *Project* pane (usually on the right) by right-clicking on the "avalanche" folder -> "Mark Directory as" -> "Sources Root".
    2. For VS Code, follow the [official documentation](https://code.visualstudio.com/docs/python/environments#_use-of-the-pythonpath-variable).
 
-4. **Download and extract the dataset**: in order to download the dataset, we ask all participants to accept the dataset terms and provide their email addresses through this form (TBD). 
+4. **Download and extract the dataset**: in order to download the dataset, we ask all participants to accept the dataset terms and provide their email addresses through [this form](https://forms.gle/bGXCHxcGRPaTcKPg6). 
 You will immediately receive the download instructions at the provided address. We recommend extracting the dataset in the default folder `$HOME/3rd_clvision_challenge/demo_dataset/`.
 The final directory structure should be like this:
 
@@ -72,8 +72,6 @@ especially the [train_one_epoch](https://github.com/pytorch/vision/blob/71d2bb0b
 A schematic visualization of the training loop, its events, and an example of a plugin implementing EWC is shown below:
 
 ![Object Detection Template schema](./docs/img/od_template.png)
-
-Again, if this is the first time you use Avalanche, we suggest you to study the [From Zero To Hero tutorial](https://avalanche.continualai.org/from-zero-to-hero-tutorial/01_introduction) to learn about Avalanche.
 
 ## Hints
 
