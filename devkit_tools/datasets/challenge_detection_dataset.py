@@ -7,12 +7,14 @@
 ###
 
 from pathlib import Path
-from typing import List, Sequence, Union
+from typing import List, Sequence, Union, Mapping
 
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision.datasets.folder import default_loader
 
+from devkit_tools.challenge_constants import DEFAULT_DEMO_TRAIN_JSON, \
+    DEFAULT_DEMO_TEST_JSON
 from ego_objectron import EgoObjectron, EgoObjectronAnnotation, \
     EgoObjectronImage
 import torch
@@ -32,7 +34,8 @@ class ChallengeDetectionDataset(Dataset):
         loader=default_loader,
         ego_api=None,
         img_ids: List[int] = None,
-        bbox_format: str = 'ltwh'
+        bbox_format: str = 'ltwh',
+        categories_id_mapping: List[int] = None
     ):
         """
         Instantiates the sample dataset.
@@ -48,6 +51,9 @@ class ChallengeDetectionDataset(Dataset):
             to None.
         :param bbox_format: The bounding box format. Defaults to "ltwh"
             (Left, Top, Width, Height).
+        :param categories_id_mapping: If set, it must define a mapping from
+            the to-be-used-id to the real category id so that:
+            real_cat_id = categories_id_mapping[mapped_id].
         """
         self.root: Path = Path(root)
         self.train = train
@@ -56,6 +62,7 @@ class ChallengeDetectionDataset(Dataset):
         self.bbox_crop = True
         self.img_ids = img_ids
         self.bbox_format = bbox_format
+        self.categories_id_mapping = categories_id_mapping
 
         self.ego_api = ego_api
 
@@ -65,15 +72,17 @@ class ChallengeDetectionDataset(Dataset):
         # Load metadata
         if must_load_api:
             if self.train:
-                ann_json_path = str(self.root / "egoobjects_sample_train.json")
+                ann_json_path = str(self.root / DEFAULT_DEMO_TRAIN_JSON)
             else:
-                ann_json_path = str(self.root / "egoobjects_sample_test.json")
+                ann_json_path = str(self.root / DEFAULT_DEMO_TEST_JSON)
             self.ego_api = EgoObjectron(ann_json_path)
 
         if must_load_img_ids:
             self.img_ids = list(sorted(self.ego_api.get_img_ids()))
 
-        self.targets = EgoObjectronDetectionTargets(self.ego_api, self.img_ids)
+        self.targets = EgoObjectronDetectionTargets(
+            self.ego_api, self.img_ids,
+            categories_id_mapping=categories_id_mapping)
 
         # Try loading an image
         if len(self.img_ids) > 0:
@@ -166,9 +175,18 @@ class EgoObjectronDetectionTargets(Sequence[List[EgoObjectronAnnotation]]):
     def __init__(
             self,
             ego_api: EgoObjectron,
-            img_ids: List[int] = None):
+            img_ids: List[int] = None,
+            categories_id_mapping: List[int] = None):
         super(EgoObjectronDetectionTargets, self).__init__()
         self.ego_api = ego_api
+
+        if categories_id_mapping is not None:
+            self.reversed_mapping = dict()
+            for mapped_id, real_id in enumerate(categories_id_mapping):
+                self.reversed_mapping[real_id] = mapped_id
+        else:
+            self.reversed_mapping = None
+
         if img_ids is None:
             img_ids = list(sorted(ego_api.get_img_ids()))
 
@@ -182,7 +200,18 @@ class EgoObjectronDetectionTargets(Sequence[List[EgoObjectronAnnotation]]):
         annotation_ids = self.ego_api.get_ann_ids(img_ids=[img_id])
         annotation_dicts: List[EgoObjectronAnnotation] = \
             self.ego_api.load_anns(annotation_ids)
-        return annotation_dicts
+
+        if self.reversed_mapping is None:
+            return annotation_dicts
+
+        mapped_anns: List[EgoObjectronAnnotation] = []
+        for ann_dict in annotation_dicts:
+            ann_dict: EgoObjectronAnnotation = dict(ann_dict)
+            ann_dict['category_id'] = \
+                self.reversed_mapping[ann_dict['category_id']]
+            mapped_anns.append(ann_dict)
+
+        return mapped_anns
 
 
 __all__ = [

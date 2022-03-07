@@ -4,6 +4,10 @@ This is the official starting repository for the **Continual Learning Challenge*
 
 Please refer to the [**challenge website**](https://sites.google.com/view/clvision2022/challenge) for more details!
 
+The Slack channel is now open: TBD
+
+**We are gathering feedback about the devkit.** Join the Slack channel or open an issue directly on this repo!
+
 ## Getting started
 The devkit is based on the [Avalanche library](https://github.com/ContinualAI/avalanche). We warmly recommend looking at the [documentation](https://avalanche.continualai.org/) (especially the ["Zero to Hero"](https://avalanche.continualai.org/from-zero-to-hero-tutorial/01_introduction) tutorials) if this is the first time you use it!
 
@@ -11,32 +15,69 @@ For the demo track, Avalanche is added as a Git submodule of this repository. Th
 
 The recommended setup steps are as follows:
 
-1. Install [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html) (and [mamba](https://github.com/mamba-org/mamba); recommended)
+1. **Install [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html)** (and [mamba](https://github.com/mamba-org/mamba); recommended)
 
-2. Clone the repo and create the conda environment:
+2. **Clone the repo** and **create the conda environment**:
 ```bash
 git clone --recurse-submodules https://github.com/ContinualAI/clvision-challenge-2022.git
 cd clvision-challenge-2022
 conda env create -f environment.yml
 ```
 
-3. Setup your IDE so that the avalanche submodule is included in the *PYTHONPATH*. Note: you have to include the top-level folder, not `avalanche/avalanche`!
+3. **Setup your IDE** so that the avalanche submodule is included in the *PYTHONPATH*. Note: you have to include the top-level folder, not `avalanche/avalanche`!
    1. For Jetbrains IDEs (PyCharm), this can be done from the *Project* pane (usually on the right) by right-clicking on the "avalanche" folder -> "Mark Directory as" -> "Sources Root".
    2. For VS Code, follow the [official documentation](https://code.visualstudio.com/docs/python/environments#_use-of-the-pythonpath-variable).
 
-4. Download and extract the dataset: TBD
+4. **Download and extract the dataset**: in order to download the dataset, we ask all participants to accept the dataset terms and provide their email addresses through this form (TBD). 
+You will immediately receive the download instructions at the provided address. We recommend extracting the dataset in the default folder `$HOME/3rd_clvision_challenge/demo_dataset/`.
+The final directory structure should be like this:
+
+```
+$HOME/3rd_clvision_challenge/demo_dataset/
+├── ego_objects_demo_test.json
+├── ego_objects_demo_train.json
+├── images
+│   ├── 07A28C4666133270E9D65BAB3BCBB094_0.png
+│   ├── 07A28C4666133270E9D65BAB3BCBB094_100.png
+│   ├── 07A28C4666133270E9D65BAB3BCBB094_101.png
+│   ├── ...
+```
 
 The aforementioned steps should be OS-agnostic. However, we recommend setting up your dev environment using a mainstream Linux distro.
 
 ## Object Classification Training Template
-More details coming soon. Stay tuned!
+The starting template for the object classification track is based on the tried and tested strategies offered by Avalanche.
+
+In particular, the starting template can be found in [`starting_template_track1.py`](starting_template_track1.py). The 
+default template offers a working train/eval loop that uses the
+[Naive](https://avalanche-api.continualai.org/en/latest/generated/avalanche.training.Naive.html) strategy.
+
+The Naive strategy is a plain fine-tuning loop that, given the optimizer, number of epochs, the minibatch size, and the loss function, will just run a very forgetting-prone training loop.
+This should be taken as the lower bound for a solution. This means that the basic loop already there, ready to be customized. There are two main ways to implement your solution:
+- Override parts of the base class `SupervisedTemplate` in order to customize the epoch loop, the backward and forward operations, etcetera.
+- Implement your solution as a plugin (many mainstream techniques are implemented in Avalanche as plugins, see [the documentation](https://avalanche-api.continualai.org/en/latest/training.html#training-plugins))
+
+We suggest you to study the [From Zero To Hero tutorials](https://avalanche.continualai.org/from-zero-to-hero-tutorial/01_introduction) to learn about Avalanche.
 
 ## Object Detection Training Template
-The devkit provides a training template that you should use to develop your CL strategy. We suggest you to study the [from zero to hero tutorial](https://avalanche.continualai.org/from-zero-to-hero-tutorial/01_introduction) to learn about Avalanche.
+The starting point for the detection tracks is [`starting_template_track2.py`](starting_template_track2.py).
+That entry point uses the ([DetectionTemplate](devkit_tools/templates/detection_template.py)) template, which is the template you should customize 
+to implement your CL strategy.
 
-This following training template is based on Avalanche [training templates](https://avalanche.continualai.org/from-zero-to-hero-tutorial/04_training).
-
-The training loop is an almost exact implementation of the one shown in the official [TorchVision Object Detection Finetuning Tutorial](https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html), especially the [train_one_epoch](https://github.com/pytorch/vision/blob/71d2bb0bc67044f55d38bfddf04e05be0343deab/references/detection/engine.py#L12) method.
+That training template is based on Avalanche [training templates](https://avalanche.continualai.org/from-zero-to-hero-tutorial/04_training). 
+The training loop is an almost exact implementation of the one shown in the official
+[TorchVision Object Detection Finetuning Tutorial](https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html), 
+especially the [train_one_epoch](https://github.com/pytorch/vision/blob/71d2bb0bc67044f55d38bfddf04e05be0343deab/references/detection/engine.py#L12) method.
 
 A schematic visualization of the training loop, its events, and an example of a plugin implementing EWC is shown below:
+
 ![Object Detection Template schema](./docs/img/od_template.png)
+
+Again, if this is the first time you use Avalanche, we suggest you to study the [From Zero To Hero tutorial](https://avalanche.continualai.org/from-zero-to-hero-tutorial/01_introduction) to learn about Avalanche.
+
+## Hints
+
+- During the demo phase, the devkit will be updated quite often. We recommend checking if there are new updates frequently.
+- The default logger will just print the progress to stdout (and it is quite verbose). Consider using dashboard loggers, 
+such as *Tensorboard* or *Weights & Biases*. See the tutorial on loggers [here](https://avalanche.continualai.org/from-zero-to-hero-tutorial/06_loggers).
+You can use more than one logger at the same time!

@@ -12,7 +12,7 @@ from devkit_tools.benchmarks.detection_scenario import DetectionCLScenario, \
     det_exp_factory
 from devkit_tools.challenge_constants import \
     DEMO_DETECTION_FORCED_TRANSFORMS, DEFAULT_DEMO_TEST_JSON, \
-    DEFAULT_DEMO_TRAIN_JSON
+    DEFAULT_DEMO_TRAIN_JSON, DEMO_DETECTION_EXPERIENCES
 from ego_objectron import EgoObjectron
 
 
@@ -32,13 +32,17 @@ def demo_detection_benchmark(
         train_json_name=train_json_name,
         test_json_name=test_json_name,
         instance_level=False,
-        n_exps=5
+        n_exps=DEMO_DETECTION_EXPERIENCES
     )
 
     # Create aligned datasets
     if train_json_name is None:
         train_json_name = DEFAULT_DEMO_TRAIN_JSON
     train_ego_api = EgoObjectron(str(Path(dataset_path) / train_json_name))
+
+    if test_json_name is None:
+        test_json_name = DEFAULT_DEMO_TEST_JSON
+    test_ego_api = EgoObjectron(str(Path(dataset_path) / test_json_name))
 
     train_dataset = ChallengeClassificationDataset(
         dataset_path,
@@ -47,10 +51,6 @@ def demo_detection_benchmark(
         bbox_margin=20,
         instance_level=False
     )
-
-    if test_json_name is None:
-        test_json_name = DEFAULT_DEMO_TEST_JSON
-    test_ego_api = EgoObjectron(str(Path(dataset_path) / test_json_name))
 
     test_dataset = ChallengeClassificationDataset(
         dataset_path,
@@ -81,13 +81,26 @@ def demo_detection_benchmark(
         eval=(DEMO_DETECTION_FORCED_TRANSFORMS, None)
     )
 
+    # Align categories IDs
+    # The JSON may contain categories with sparse IDs
+    # In this way max(categories_ids) >= len(categories), which is not ok!
+    # For instance, if category IDs are [0, 1, 2, 3, 5], then initializing
+    # the ROI head with n_categories=5 is wrong and it will trigger errors
+    # when computing losses (as logits must have 6 elements, not 5)
+    # To prevent issues, we just remap categories IDs to range [0, n_categories)
+    train_category_ids = set(train_ego_api.get_cat_ids())
+    assert train_category_ids == set(test_ego_api.get_cat_ids())
+
+    categories_id_mapping = list(sorted(train_category_ids))
+
     train_exps = []
     for exp_id, exp_img_ids in enumerate(train_img_ids):
         exp_dataset = ChallengeDetectionDataset(
             dataset_path,
             train=True,
             ego_api=train_ego_api,
-            img_ids=exp_img_ids
+            img_ids=exp_img_ids,
+            categories_id_mapping=categories_id_mapping
         )
 
         avl_exp_dataset = AvalancheDataset(
@@ -108,7 +121,8 @@ def demo_detection_benchmark(
         dataset_path,
         train=False,
         ego_api=test_ego_api,
-        img_ids=test_img_ids
+        img_ids=test_img_ids,
+        categories_id_mapping=categories_id_mapping
     )
 
     avl_exp_dataset = AvalancheDataset(

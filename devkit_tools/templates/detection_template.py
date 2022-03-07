@@ -88,10 +88,10 @@ class ObjectDetectionTemplate(BaseSGDTemplate):
         """Optimizer initialization."""
         # TODO: if you want to reset the optimizer state between each
         #  training experience, this is the right place to do it
-        # The current optimized is stored in self.optimizer
+        # The current optimizer is stored in self.optimizer
         # If you re-create the optimizer, make sure to store the new one in that
         # field!
-        pass  # keep the previous optimizer as is.
+        pass  # pass == keep the current optimizer as is
 
     def criterion(self):
         """

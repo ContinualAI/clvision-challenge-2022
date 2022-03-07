@@ -123,11 +123,14 @@ class ChallengeClassificationDataset(PathsDataset):
 
             all_instance_ids.add(main_annotation_class)
 
-        class_label_to_instance_id = sorted(list(all_instance_ids))
+        class_label_to_instance_id = list(sorted(all_instance_ids))
+        reversed_mapping = dict()
+        for mapped_id, real_id in enumerate(class_label_to_instance_id):
+            reversed_mapping[real_id] = mapped_id
 
         # Map from instance_id to class label
         for img_triplet in image_triplets:
-            img_triplet[1] = class_label_to_instance_id.index(img_triplet[1])
+            img_triplet[1] = reversed_mapping[img_triplet[1]]
 
         return image_triplets, img_ids_with_main_ann
 
@@ -137,15 +140,17 @@ if __name__ == '__main__':
     from torch.utils.data import DataLoader
     from torchvision.transforms import ToTensor, Resize, Compose
 
-    sample_root: Path = Path.home() / '3rd_clvision_challenge'
+    sample_root: Path = Path.home() / '3rd_clvision_challenge' / 'demo_dataset'
     show_images = True
-    try_loading = True
-    train = False
+    try_loading = False
+    train = True
+    instance_level = True
 
     sample_classification_dataset = ChallengeClassificationDataset(
         root=sample_root,
         train=train,
-        bbox_margin=20
+        bbox_margin=20,
+        instance_level=instance_level
     )
 
     targets = torch.tensor(list(sample_classification_dataset.targets))

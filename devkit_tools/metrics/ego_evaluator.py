@@ -68,8 +68,8 @@ class EgoEvaluator:
                 else:
                     ego_results = all_preds
 
-                ego_results = EgoObjectronResults(gt_subset, ego_results,
-                                           max_dets=max_dets_per_image)
+                ego_results = EgoObjectronResults(
+                    gt_subset, ego_results, max_dets=max_dets_per_image)
                 ego_eval = EgoObjectronEval(gt_subset, ego_results, iou_type)
                 ego_eval.params.img_ids = list(set(eval_imgs))
                 ego_eval.run()

@@ -39,7 +39,27 @@ class EgoObjectron:
         assert (
                 type(self.dataset) == dict
         ), "Annotation file format {} not supported.".format(type(self.dataset))
+        self._fix_areas()
+        self._fix_frequencies()
         self._create_index()
+
+    def _fix_areas(self):
+        for ann in self.dataset["annotations"]:
+            ann['area'] = ann.get('area', ann['bbox'][2] * ann['bbox'][3])
+
+    def _fix_frequencies(self):
+        for cat_data in self.dataset["categories"]:
+            if 'frequency' not in cat_data:
+                # r: Rare    :  < 10
+                # c: Common  : >= 10 and < 100
+                # f: Frequent: >= 100
+                if cat_data['image_count'] < 10:
+                    frequency = 'r'
+                elif cat_data['image_count'] < 100:
+                    frequency = 'c'
+                else:
+                    frequency = 'f'
+                cat_data['frequency'] = frequency
 
     def _load_json(self, path):
         with open(path, "r") as f:
@@ -81,7 +101,7 @@ class EgoObjectron:
         Returns:
             ids (int array): integer array of ann ids
         """
-        anns = []
+        anns: List[EgoObjectronAnnotation] = []
         if img_ids is not None:
             for img_id in img_ids:
                 anns.extend(self.img_ann_map[img_id])
@@ -97,13 +117,21 @@ class EgoObjectron:
         if area_rng is None:
             area_rng = [0, float("inf")]
 
-        ann_ids = [
-            _ann["id"]
-            for _ann in anns
-            if _ann["category_id"] in cat_ids
-            and _ann["area"] > area_rng[0]
-            and _ann["area"] < area_rng[1]
-        ]
+        ann_ids = []
+        for _ann in anns:
+            ann_area = _ann.get(
+                'area', _ann['bbox'][2] * _ann['bbox'][3])
+            if _ann["category_id"] in cat_ids \
+                    and area_rng[0] < ann_area < area_rng[1]:
+                ann_ids.append(_ann["id"])
+
+        # ann_ids = [
+        #     _ann["id"]
+        #     for _ann in anns
+        #     if _ann["category_id"] in cat_ids
+        #     and _ann["area"] > area_rng[0]
+        #     and _ann["area"] < area_rng[1]
+        # ]
         return ann_ids
 
     def get_cat_ids(self):

@@ -87,14 +87,15 @@ class EgoObjectronEval:
         # presence or absence in an image.
         img_data = self.ego_gt.load_imgs(ids=self.params.img_ids)
         # per image map of categories not present in image
-        img_nl = {d["id"]: d["neg_category_ids"] for d in img_data}
+        img_nl = {d["id"]: d.get("neg_category_ids", list()) for d in img_data}
         # per image list of categories present in image
         img_pl = defaultdict(set)
         for ann in gts:
             img_pl[ann["image_id"]].add(ann["category_id"])
         # per image map of categoires which have missing gt. For these
         # categories we don't penalize the detector for false positives.
-        self.img_nel = {d["id"]: d["not_exhaustive_category_ids"] for d in img_data}
+        self.img_nel = {d["id"]: d.get("not_exhaustive_category_ids", list())
+                        for d in img_data}
 
         for dt in dts:
             img_id, cat_id = dt["image_id"], dt["category_id"]
@@ -108,7 +109,18 @@ class EgoObjectronEval:
         freq_groups = [[] for _ in self.params.img_count_lbl]
         cat_data = self.ego_gt.load_cats(self.params.cat_ids)
         for idx, _cat_data in enumerate(cat_data):
-            frequency = _cat_data["frequency"]
+            if 'frequency' not in _cat_data:
+                # r: Rare    :  < 10
+                # c: Common  : >= 10 and < 100
+                # f: Frequent: >= 100
+                if _cat_data['image_count'] < 10:
+                    frequency = 'r'
+                elif _cat_data['image_count'] < 100:
+                    frequency = 'c'
+                else:
+                    frequency = 'f'
+            else:
+                frequency = _cat_data["frequency"]
             freq_groups[self.params.img_count_lbl.index(frequency)].append(idx)
         return freq_groups
 

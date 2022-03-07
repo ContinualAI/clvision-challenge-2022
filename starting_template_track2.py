@@ -50,7 +50,7 @@ from devkit_tools.metrics.detection_output_exporter import EgoMetrics
 from devkit_tools.templates.detection_template import ObjectDetectionTemplate
 
 # TODO: change this to the path where you downloaded (and extracted) the dataset
-DATASET_PATH = Path.home() / '3rd_clvision_challenge'
+DATASET_PATH = Path.home() / '3rd_clvision_challenge' / 'demo_dataset'
 
 # Don't change this (unless you want to experiment with different class orders)
 # Note: it won't be possible to change the class order in the real challenge
@@ -114,6 +114,7 @@ def main(args):
     model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
 
     model = model.to(device)
+    print('Num classes', num_classes)
     # --- OPTIMIZER AND SCHEDULER CREATION
 
     # Create the optimizer

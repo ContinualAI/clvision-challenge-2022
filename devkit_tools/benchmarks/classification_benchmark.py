@@ -5,7 +5,7 @@ from avalanche.benchmarks import nc_benchmark
 from avalanche.benchmarks.utils import AvalancheDataset
 from devkit_tools import ChallengeClassificationDataset
 from devkit_tools.challenge_constants import \
-    DEMO_CLASSIFICATION_FORCED_TRANSFORMS
+    DEMO_CLASSIFICATION_FORCED_TRANSFORMS, DEMO_CLASSIFICATION_EXPERIENCES
 from ego_objectron import EgoObjectron
 
 
@@ -18,7 +18,7 @@ def demo_classification_benchmark(
         train_json_name=None,
         test_json_name=None,
         instance_level=True,
-        n_exps=15):
+        n_exps=DEMO_CLASSIFICATION_EXPERIENCES):
 
     base_transforms = dict(
         train=(DEMO_CLASSIFICATION_FORCED_TRANSFORMS, None),
