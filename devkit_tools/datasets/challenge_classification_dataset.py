@@ -102,7 +102,7 @@ class ChallengeClassificationDataset(PathsDataset):
             main_annotation_id = main_annotations[0]
             main_annotation = ego_api.load_anns(ids=[main_annotation_id])[0]
 
-            main_bbox = main_annotation['bbox']  # Assume L, T, W, H
+            main_bbox = list(main_annotation['bbox'])  # Assume L, T, W, H
             # However, PathDataset requires top, left, height, width
             tmp = main_bbox[0]
             main_bbox[0] = main_bbox[1]
