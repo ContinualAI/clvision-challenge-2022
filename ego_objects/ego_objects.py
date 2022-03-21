@@ -15,7 +15,8 @@ from urllib.request import urlretrieve
 
 import pycocotools.mask as mask_utils
 
-from ego_objects import EgoObjectsAnnotation, EgoObjectsCategory, EgoObjectsImage
+from ego_objects import EgoObjectsAnnotation, EgoObjectsCategory, \
+    EgoObjectsImage, EgoObjectsJson
 
 T = TypeVar('T')
 
@@ -29,11 +30,14 @@ class EgoObjects:
                 If set, overrides annotation_path.
         """
         self.logger = logging.getLogger(__name__)
-        self.logger.info("Loading annotations.")
+
+        self.dataset: EgoObjectsJson
 
         if annotation_dict is None:
+            self.logger.info("Loading annotations.")
             self.dataset = self._load_json(annotation_path)
         else:
+            self.logger.info("Using pre-loaded annotations.")
             self.dataset = annotation_dict
 
         assert (
@@ -90,7 +94,10 @@ class EgoObjects:
 
         self.logger.info("Index created.")
 
-    def get_ann_ids(self, img_ids=None, cat_ids=None, area_rng=None):
+    def recreate_index(self):
+        self._create_index()
+
+    def get_ann_ids(self, img_ids=None, cat_ids=None, area_rng=None) -> List[int]:
         """Get ann ids that satisfy given filter conditions.
 
         Args:
@@ -134,7 +141,7 @@ class EgoObjects:
         # ]
         return ann_ids
 
-    def get_cat_ids(self):
+    def get_cat_ids(self) -> List[int]:
         """Get all category ids.
 
         Returns:
@@ -142,7 +149,7 @@ class EgoObjects:
         """
         return list(self.cats.keys())
 
-    def get_img_ids(self):
+    def get_img_ids(self) -> List[int]:
         """Get all img ids.
 
         Returns:

@@ -9,9 +9,6 @@ from pathlib import Path
 
 from ego_objects import EgoObjectsVis
 
-import matplotlib
-matplotlib.use('Agg')
-
 from devkit_tools import ChallengeDetectionDataset
 
 import matplotlib.pyplot as plt
@@ -20,6 +17,8 @@ from PIL import Image
 
 
 def main():
+    import matplotlib
+    matplotlib.use('Agg')
     sample_root: Path = Path.home() / '3rd_clvision_challenge'
 
     sample_dataset = ChallengeDetectionDataset(root=sample_root)

@@ -6,6 +6,7 @@ class EgoObjectsCategory(TypedDict):
     name: str
     image_count: int
     instance_count: int
+    frequency: str  # Missing, computed from image_count
 
 
 class EgoObjectsImage(TypedDict):
@@ -34,7 +35,7 @@ class EgoObjectsAnnotation(TypedDict):
     bbox: List[float]
     category_id: int
     instance_id: str
-    # area: float  # Missing, computed from bbox
+    area: float  # Missing, computed from bbox
     # segmentation: List[List[float]]  # Will not be supported
 
 

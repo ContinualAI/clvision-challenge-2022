@@ -10,10 +10,13 @@ from devkit_tools.benchmarks.classification_benchmark import \
     demo_classification_benchmark
 from devkit_tools.benchmarks.detection_scenario import DetectionCLScenario, \
     det_exp_factory
+from devkit_tools.benchmarks.remap_category_ids import \
+    make_compact_category_ids_mapping, remap_category_ids
 from devkit_tools.challenge_constants import \
     DEMO_DETECTION_FORCED_TRANSFORMS, DEFAULT_DEMO_TEST_JSON, \
     DEFAULT_DEMO_TRAIN_JSON, DEMO_DETECTION_EXPERIENCES
 from ego_objects import EgoObjects
+from examples.tvdetection.transforms import ToTensor
 
 
 def demo_detection_benchmark(
@@ -88,10 +91,11 @@ def demo_detection_benchmark(
     # the ROI head with n_categories=5 is wrong and it will trigger errors
     # when computing losses (as logits must have 6 elements, not 5)
     # To prevent issues, we just remap categories IDs to range [0, n_categories)
-    train_category_ids = set(train_ego_api.get_cat_ids())
-    assert train_category_ids == set(test_ego_api.get_cat_ids())
+    categories_id_mapping = make_compact_category_ids_mapping(
+        train_ego_api, test_ego_api)
 
-    categories_id_mapping = list(sorted(train_category_ids))
+    remap_category_ids(train_ego_api, categories_id_mapping)
+    remap_category_ids(test_ego_api, categories_id_mapping)
 
     train_exps = []
     for exp_id, exp_img_ids in enumerate(train_img_ids):
@@ -100,7 +104,6 @@ def demo_detection_benchmark(
             train=True,
             ego_api=train_ego_api,
             img_ids=exp_img_ids,
-            categories_id_mapping=categories_id_mapping
         )
 
         avl_exp_dataset = AvalancheDataset(
@@ -122,7 +125,6 @@ def demo_detection_benchmark(
         train=False,
         ego_api=test_ego_api,
         img_ids=test_img_ids,
-        categories_id_mapping=categories_id_mapping
     )
 
     avl_exp_dataset = AvalancheDataset(

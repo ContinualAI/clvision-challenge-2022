@@ -116,7 +116,7 @@ class ObjectDetectionTemplate(BaseSGDTemplate):
             # metrics can use self.mb_output and self.res
             self.res = {target["image_id"].item(): output
                         for target, output in zip(self.targets, self.mb_output)}
-            return self.res
+            return torch.zeros((1,))
 
     def forward(self):
         """
@@ -159,6 +159,14 @@ class ObjectDetectionTemplate(BaseSGDTemplate):
         :return: Targets in the current mini-batch, as a list of dictionaries
         (one dictionary for each image).
         """
+        return self._targets
+
+    @property
+    def mb_x(self):
+        return self._images
+
+    @property
+    def mb_y(self):
         return self._targets
 
     def _unpack_minibatch(self):

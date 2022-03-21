@@ -26,28 +26,31 @@ The template is organized as follows:
 """
 
 import argparse
+import datetime
 import logging
+import random
 from pathlib import Path
 from typing import List
 
+import numpy as np
 import torch
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
-from torchvision.transforms import ToTensor
 
 from avalanche.benchmarks.utils import Compose
 from avalanche.core import SupervisedPlugin
-from avalanche.evaluation.metrics import timing_metrics
-from avalanche.logging import InteractiveLogger
-from avalanche.training.plugins import EvaluationPlugin, LRSchedulerPlugin
+from avalanche.evaluation.metrics import timing_metrics, loss_metrics
+from avalanche.logging import InteractiveLogger, TensorboardLogger
+from avalanche.training.plugins import EvaluationPlugin
 from devkit_tools.benchmarks import demo_detection_benchmark
-from devkit_tools.benchmarks.classification_benchmark import \
-    demo_classification_benchmark
 from devkit_tools.challenge_constants import DEFAULT_DEMO_CLASS_ORDER_SEED
-
-
 from devkit_tools.metrics.detection_output_exporter import EgoMetrics
+from devkit_tools.metrics.dictionary_loss import dict_loss_metrics
+from devkit_tools.plugins.improved_scheduler_plugin import \
+    ImprovedLRSchedulerPlugin
 from devkit_tools.templates.detection_template import ObjectDetectionTemplate
+
+from examples.tvdetection.transforms import RandomHorizontalFlip, ToTensor
 
 # TODO: change this to the path where you downloaded (and extracted) the dataset
 DATASET_PATH = Path.home() / '3rd_clvision_challenge' / 'demo_dataset'
@@ -81,7 +84,7 @@ def main(args):
     # - make sure you are using the "Compose" from avalanche.benchmarks.utils,
     #    not the one from torchvision or from the aforementioned link.
     train_transform = Compose(
-        [ToTensor()]
+        [ToTensor(), RandomHorizontalFlip(0.5)]
     )
 
     # Don't add augmentation transforms to the eval transformations!
@@ -106,28 +109,33 @@ def main(args):
 
     # By disabling the grad on current params, only the box predictor is tuned
     # (because it's created later, in the next few lines of code)
-    for p in model.parameters():
-        p.requires_grad = False
+    # for p in model.parameters():
+    #     p.requires_grad = False
 
     num_classes = benchmark.n_classes + 1  # N classes + background
     in_features = model.roi_heads.box_predictor.cls_score.in_features
     model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
 
     model = model.to(device)
-    print('Num classes', num_classes)
+    print('Num classes (including background)', num_classes)
     # --- OPTIMIZER AND SCHEDULER CREATION
 
     # Create the optimizer
     params = [p for p in model.parameters() if p.requires_grad]
     optimizer = torch.optim.SGD(params, lr=0.005,
-                                momentum=0.9, weight_decay=0.0005)
+                                momentum=0.9, weight_decay=1e-5)
 
     # Define the scheduler
-    train_mb_size = 5
+    train_mb_size = 4
+
+    # When using LinearLR, the LR will start from optimizer.lr / start_factor
+    # (here named warmup_factor) and will then increase after each call to
+    # scheduler.step(). After start_factor steps (here called warmup_iters),
+    # the LR will be set optimizer.lr and never changed again.
     warmup_factor = 1.0 / 1000
-    warmup_iters = min(
-        1000, len(benchmark.train_stream[0].dataset) // train_mb_size - 1
-    )
+    warmup_iters = \
+        min(1000, len(benchmark.train_stream[0].dataset) // train_mb_size - 1)
+
     lr_scheduler = torch.optim.lr_scheduler.LinearLR(
         optimizer, start_factor=warmup_factor, total_iters=warmup_iters
     )
@@ -143,9 +151,18 @@ def main(args):
     # Many mainstream continual learning approaches are available as plugins:
     # https://avalanche-api.continualai.org/en/latest/training.html#training-plugins
     #
+
+    # Note on LRSchedulerPlugin
+    # Consider that scheduler.step() may be called after each epoch or
+    # iteration, depending on the needed granularity. In the Torchvision
+    # object detection tutorial, in the train_one_epoch function, step() is
+    # called after each iteration. In addition, the scheduler is only used in
+    # the very first epoch. The same setup is here replicated.
     mandatory_plugins = []
     plugins: List[SupervisedPlugin] = [
-        LRSchedulerPlugin(lr_scheduler)
+        ImprovedLRSchedulerPlugin(
+            lr_scheduler, step_granularity='iteration',
+            first_exp_only=True, first_epoch_only=True),
         # ...
     ] + mandatory_plugins
     # ---------
@@ -155,9 +172,23 @@ def main(args):
     evaluator = EvaluationPlugin(
         mandatory_metrics,
         timing_metrics(
-            experience=True, stream=True
+            experience=True,
+            stream=True
         ),
-        loggers=[InteractiveLogger()]
+        loss_metrics(
+            minibatch=True,
+            epoch_running=True,
+        ),
+        dict_loss_metrics(
+            minibatch=True,
+            epoch_running=True,
+            epoch=True
+        ),
+        loggers=[InteractiveLogger(),
+                 TensorboardLogger(
+                     tb_log_dir='./log/track2/exp_' +
+                                datetime.datetime.now().isoformat())],
+        benchmark=benchmark
     )
     # ---------
 
