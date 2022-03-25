@@ -26,7 +26,7 @@ class EgoMetrics(PluginMetric[str]):
     """
 
     def __init__(self, save_folder=None, filename_prefix='model_output',
-                 iou_types=['bbox']):
+                 stream='test', iou_types=['bbox']):
         """
         :param save_folder: path to the folder where to write model output
             files. None to disable writing to file.
@@ -41,6 +41,12 @@ class EgoMetrics(PluginMetric[str]):
         self.save_folder = save_folder
         self.filename_prefix = filename_prefix
         self.iou_types = iou_types
+        self.stream = stream
+
+        self.last_train_exp = -1
+        """
+        The last train experience.
+        """
 
         self.ego_evaluator = None
         """Main Ego evaluator object to compute metrics"""
@@ -81,8 +87,17 @@ class EgoMetrics(PluginMetric[str]):
         print("******* ", score_str)
         return score_str
 
+    def before_training_exp(
+            self,
+            strategy):
+        super().before_training_exp(strategy)
+
+        self.last_train_exp = strategy.experience.current_experience
+
     def before_eval_exp(self, strategy) -> None:
         super().before_eval_exp(strategy)
+        if strategy.experience.origin_stream.name != self.stream:
+            return
 
         self.reset()
         ego_api = get_detection_api_from_dataset(
@@ -92,10 +107,16 @@ class EgoMetrics(PluginMetric[str]):
 
     def after_eval_iteration(self, strategy) -> None:
         super().after_eval_iteration(strategy)
+        if strategy.experience.origin_stream.name != self.stream:
+            return
+
         self.update(strategy.res)
 
     def after_eval_exp(self, strategy):
         super().after_eval_exp(strategy)
+        if strategy.experience.origin_stream.name != self.stream:
+            return
+
         return self._package_result(strategy)
 
     def _package_result(self, strategy):
@@ -116,7 +137,7 @@ class EgoMetrics(PluginMetric[str]):
         return os.path.join(
             self.save_folder,
             f"{self.filename_prefix}{middle}"
-            f"{strategy.experience.current_experience}.json")
+            f"{self.last_train_exp}.json")
 
     def __str__(self):
         return "EgoMetrics"

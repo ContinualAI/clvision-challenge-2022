@@ -18,12 +18,15 @@ class ClassificationOutputExporter(SupervisedPlugin[SupervisedTemplate]):
     Model outputs will be used to compute the final score.
     """
 
-    def __init__(self, save_folder: Union[str, Path] = None,
+    def __init__(self,
+                 save_folder: Union[str, Path] = None,
                  filename_prefix='track1_output',
+                 stream='test',
                  strict=False):
         """
         :param save_folder: path to the folder where to write model output
             files. None to disable writing to file.
+        :param stream: the name of the stream.
         :param filename_prefix: prefix common to all model outputs files
 
         """
@@ -49,6 +52,11 @@ class ClassificationOutputExporter(SupervisedPlugin[SupervisedTemplate]):
         self.filename_prefix = filename_prefix
         """
         The base file name to use to store model outputs.
+        """
+
+        self.stream = stream
+        """
+        The name of the stream for which the model outputs have to be saved.
         """
 
         self.last_train_exp = -1
@@ -136,6 +144,9 @@ class ClassificationOutputExporter(SupervisedPlugin[SupervisedTemplate]):
     def before_eval_exp(
             self, strategy: SupervisedTemplate, *args, **kwargs):
         super().before_eval_exp(strategy, *args, **kwargs)
+        if strategy.experience.origin_stream.name != self.stream:
+            return
+
         if not self._enable_recording:
             return
 
@@ -145,6 +156,9 @@ class ClassificationOutputExporter(SupervisedPlugin[SupervisedTemplate]):
     def after_eval_iteration(
             self, strategy: SupervisedTemplate, *args, **kwargs):
         super().after_eval_iteration(strategy, *args, **kwargs)
+        if strategy.experience.origin_stream.name != self.stream:
+            return
+
         if not self._enable_recording:
             return
 
@@ -153,6 +167,9 @@ class ClassificationOutputExporter(SupervisedPlugin[SupervisedTemplate]):
 
     def after_eval_exp(self, strategy, *args, **kwargs):
         super().after_eval_exp(strategy)
+        if strategy.experience.origin_stream.name != self.stream:
+            return
+
         if not self._enable_recording:
             return
 
