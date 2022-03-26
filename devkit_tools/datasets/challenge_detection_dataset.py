@@ -7,14 +7,14 @@
 ###
 
 from pathlib import Path
-from typing import List, Sequence, Union, Mapping
+from typing import List, Sequence, Union
 
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision.datasets.folder import default_loader
 
-from devkit_tools.challenge_constants import DEFAULT_DEMO_TRAIN_JSON, \
-    DEFAULT_DEMO_TEST_JSON
+from devkit_tools.challenge_constants import DEFAULT_CHALLENGE_TRAIN_JSON, \
+    DEFAULT_CHALLENGE_TEST_JSON
 from ego_objects import EgoObjects, EgoObjectsAnnotation, \
     EgoObjectsImage
 import torch
@@ -72,9 +72,9 @@ class ChallengeDetectionDataset(Dataset):
         # Load metadata
         if must_load_api:
             if self.train:
-                ann_json_path = str(self.root / DEFAULT_DEMO_TRAIN_JSON)
+                ann_json_path = str(self.root / DEFAULT_CHALLENGE_TRAIN_JSON)
             else:
-                ann_json_path = str(self.root / DEFAULT_DEMO_TEST_JSON)
+                ann_json_path = str(self.root / DEFAULT_CHALLENGE_TEST_JSON)
             self.ego_api = EgoObjects(ann_json_path)
 
         if must_load_img_ids:

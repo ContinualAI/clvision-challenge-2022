@@ -58,25 +58,25 @@ def challenge_classification_benchmark(
         eval=(CHALLENGE_CLASSIFICATION_FORCED_TRANSFORMS, None)
     )
 
-    ego_api = None
-    if train_json_name is not None:
-        ego_api = EgoObjects(str(Path(dataset_path) / train_json_name))
+    if train_json_name is None:
+        train_json_name = DEFAULT_CHALLENGE_TRAIN_JSON
+    train_ego_api = EgoObjects(str(Path(dataset_path) / train_json_name))
+
+    if test_json_name is None:
+        test_json_name = DEFAULT_CHALLENGE_TEST_JSON
+    test_ego_api = EgoObjects(str(Path(dataset_path) / test_json_name))
 
     train_dataset = ChallengeClassificationDataset(
         dataset_path,
-        ego_api=ego_api,
+        ego_api=train_ego_api,
         train=True,
         bbox_margin=20,
         instance_level=instance_level
     )
 
-    ego_api = None
-    if test_json_name is not None:
-        ego_api = EgoObjects(str(Path(dataset_path) / test_json_name))
-
     test_dataset = ChallengeClassificationDataset(
         dataset_path,
-        ego_api=ego_api,
+        ego_api=test_ego_api,
         train=False,
         bbox_margin=20,
         instance_level=instance_level

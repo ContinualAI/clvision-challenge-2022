@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 from torchvision.datasets.folder import default_loader
 
 from avalanche.benchmarks.utils import PathsDataset
-from devkit_tools.challenge_constants import DEFAULT_DEMO_TRAIN_JSON, \
-    DEFAULT_DEMO_TEST_JSON
+from devkit_tools.challenge_constants import DEFAULT_CHALLENGE_TRAIN_JSON, \
+    DEFAULT_CHALLENGE_TEST_JSON
 from ego_objects import EgoObjects, EgoObjectsImage
 
 
@@ -29,9 +29,9 @@ class ChallengeClassificationDataset(PathsDataset):
 
         if ego_api is None:
             if self.train:
-                ann_json_path = str(root / DEFAULT_DEMO_TRAIN_JSON)
+                ann_json_path = str(root / DEFAULT_CHALLENGE_TRAIN_JSON)
             else:
-                ann_json_path = str(root / DEFAULT_DEMO_TEST_JSON)
+                ann_json_path = str(root / DEFAULT_CHALLENGE_TEST_JSON)
             ego_api = EgoObjects(ann_json_path)
 
         if img_ids is None:
