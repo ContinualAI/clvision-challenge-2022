@@ -41,23 +41,18 @@ from avalanche.benchmarks.utils import Compose
 from avalanche.core import SupervisedPlugin
 from avalanche.evaluation.metrics import timing_metrics, loss_metrics
 from avalanche.logging import InteractiveLogger, TensorboardLogger
-from avalanche.training.plugins import EvaluationPlugin
-from devkit_tools.benchmarks import demo_detection_benchmark
-from devkit_tools.challenge_constants import DEFAULT_DEMO_CLASS_ORDER_SEED
+from avalanche.training.plugins import EvaluationPlugin, LRSchedulerPlugin
+from avalanche.training.supervised.naive_object_detection import \
+    ObjectDetectionTemplate
+from devkit_tools.benchmarks import demo_detection_benchmark, \
+    challenge_category_detection_benchmark
 from devkit_tools.metrics.detection_output_exporter import EgoMetrics
 from devkit_tools.metrics.dictionary_loss import dict_loss_metrics
-from devkit_tools.plugins.improved_scheduler_plugin import \
-    ImprovedLRSchedulerPlugin
-from devkit_tools.templates.detection_template import ObjectDetectionTemplate
 
 from examples.tvdetection.transforms import RandomHorizontalFlip, ToTensor
 
 # TODO: change this to the path where you downloaded (and extracted) the dataset
-DATASET_PATH = Path.home() / '3rd_clvision_challenge' / 'demo_dataset'
-
-# Don't change this (unless you want to experiment with different class orders)
-# Note: it won't be possible to change the class order in the real challenge
-CLASS_ORDER_SEED = DEFAULT_DEMO_CLASS_ORDER_SEED
+DATASET_PATH = Path.home() / '3rd_clvision_challenge' / 'challenge'
 
 # This sets the root logger to write to stdout (your console).
 # Customize the logging level as you wish.
@@ -94,9 +89,8 @@ def main(args):
     # ---------
 
     # --- BENCHMARK CREATION
-    benchmark = demo_detection_benchmark(
+    benchmark = challenge_category_detection_benchmark(
         dataset_path=DATASET_PATH,
-        class_order_seed=CLASS_ORDER_SEED,
         train_transform=train_transform,
         eval_transform=eval_transform
     )
@@ -160,7 +154,7 @@ def main(args):
     # the very first epoch. The same setup is here replicated.
     mandatory_plugins = []
     plugins: List[SupervisedPlugin] = [
-        ImprovedLRSchedulerPlugin(
+        LRSchedulerPlugin(
             lr_scheduler, step_granularity='iteration',
             first_exp_only=True, first_epoch_only=True),
         # ...
@@ -186,7 +180,7 @@ def main(args):
         ),
         loggers=[InteractiveLogger(),
                  TensorboardLogger(
-                     tb_log_dir='./log/track2/exp_' +
+                     tb_log_dir='./log/track_cat_det/exp_' +
                                 datetime.datetime.now().isoformat())],
         benchmark=benchmark
     )
@@ -210,11 +204,11 @@ def main(args):
     for experience in benchmark.train_stream:
         print("Start of experience: ", experience.current_experience)
 
-        cl_strategy.train(experience, num_workers=6)
+        cl_strategy.train(experience, num_workers=10)
         print("Training completed")
 
         print("Computing accuracy on the full test set")
-        cl_strategy.eval(benchmark.test_stream[0], num_workers=6)
+        cl_strategy.eval(benchmark.test_stream, num_workers=10)
 
 
 if __name__ == "__main__":

@@ -1,11 +1,12 @@
 import json
 import warnings
-from typing import Union, Dict, Any
+from typing import Union, Dict, Any, Set
 from pathlib import Path
 
 import torch
 from torch import Tensor
 
+from avalanche.benchmarks import GenericCLScenario
 from avalanche.core import SupervisedPlugin, Template
 from avalanche.training.templates import SupervisedTemplate
 
@@ -18,17 +19,23 @@ class ClassificationOutputExporter(SupervisedPlugin[SupervisedTemplate]):
     Model outputs will be used to compute the final score.
     """
 
-    def __init__(self,
-                 save_folder: Union[str, Path] = None,
-                 filename_prefix='track1_output',
-                 stream='test',
-                 strict=False):
+    def __init__(
+            self,
+            benchmark: GenericCLScenario,
+            save_folder: Union[str, Path] = None,
+            filename_prefix='track1_output',
+            stream='test',
+            strict=False):
         """
+        Creates an instance of the output exporter plugin.
+
+        :param benchmark: the benchmark to use.
         :param save_folder: path to the folder where to write model output
             files. None to disable writing to file.
-        :param stream: the name of the stream.
         :param filename_prefix: prefix common to all model outputs files
-
+        :param stream: the name of the stream.
+        :param strict: if True, it will raise an error if the correct order
+            of train/eval phases is not followed.
         """
         super().__init__()
 
@@ -38,6 +45,11 @@ class ClassificationOutputExporter(SupervisedPlugin[SupervisedTemplate]):
             save_folder = Path.cwd()
 
         save_folder.mkdir(exist_ok=True, parents=True)
+
+        self.n_test_experiences = len(benchmark.streams[stream])
+        """
+        How many test experiences are there in the benchmark.
+        """
 
         self.strict = strict
         """
@@ -90,12 +102,6 @@ class ClassificationOutputExporter(SupervisedPlugin[SupervisedTemplate]):
         self.last_eval_exp = -1
 
     def update(self, res):
-        if self.last_eval_exp > self.last_train_exp:
-            # Evaluating on the whole test stream...
-            # Only the growing test set is used for evaluation, so we can ignore
-            # the current eval experience
-            return
-
         if not isinstance(res, Tensor):
             res = torch.as_tensor(res)
 
@@ -181,10 +187,10 @@ class ClassificationOutputExporter(SupervisedPlugin[SupervisedTemplate]):
             return
 
         evaluated_exps = set(self.current_outputs.keys())
-        growing_test_set_exps = self._get_growing_set_exps()
+        test_set_exps = self._needed_test_experiences()
 
-        evaluated_exps = evaluated_exps.intersection(growing_test_set_exps)
-        if len(evaluated_exps) != len(growing_test_set_exps):
+        evaluated_exps = evaluated_exps.intersection(test_set_exps)
+        if len(evaluated_exps) != len(test_set_exps):
             # Not all epxs from the growing test have been evaluated yet
             return
 
@@ -192,12 +198,12 @@ class ClassificationOutputExporter(SupervisedPlugin[SupervisedTemplate]):
         self._save_results()
 
     def _save_results(self):
-        growing_set_exps = self._get_growing_set_exps()
-        growing_set_exps = sorted(list(growing_set_exps))
+        test_set_exps = self._needed_test_experiences()
+        test_set_exps = sorted(list(test_set_exps))
 
         out_tensors = dict()
 
-        for exp_id in growing_set_exps:
+        for exp_id in test_set_exps:
             exp_result = self.current_outputs[exp_id]
             exp_out_tensor = torch.cat(exp_result)
             out_tensors[exp_id] = exp_out_tensor.tolist()
@@ -206,8 +212,8 @@ class ClassificationOutputExporter(SupervisedPlugin[SupervisedTemplate]):
         with open(result_file_path, 'w') as f:
             json.dump(out_tensors, f)
 
-    def _get_growing_set_exps(self):
-        return set(range(self.last_train_exp+1))
+    def _needed_test_experiences(self) -> Set[int]:
+        return set(range(self.n_test_experiences))
 
     def _get_filename(self):
         """e.g. prefix_eval_exp0.json"""

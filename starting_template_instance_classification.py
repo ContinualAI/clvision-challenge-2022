@@ -26,6 +26,7 @@ The template is organized as follows:
 """
 
 import argparse
+import datetime
 from pathlib import Path
 from typing import List
 
@@ -38,23 +39,17 @@ from torchvision.transforms import ToTensor, RandomCrop
 from avalanche.benchmarks.utils import Compose
 from avalanche.core import SupervisedPlugin
 from avalanche.evaluation.metrics import accuracy_metrics, loss_metrics, \
-    confusion_matrix_metrics, timing_metrics
-from avalanche.logging import InteractiveLogger
+    timing_metrics
+from avalanche.logging import InteractiveLogger, TensorboardLogger
 from avalanche.models import SimpleMLP
 from avalanche.training.plugins import EvaluationPlugin
 from avalanche.training.supervised import Naive
-from devkit_tools.benchmarks.classification_benchmark import \
-    demo_classification_benchmark
-from devkit_tools.challenge_constants import DEFAULT_DEMO_CLASS_ORDER_SEED
+from devkit_tools.benchmarks import challenge_classification_benchmark
 from devkit_tools.metrics.classification_output_exporter import \
     ClassificationOutputExporter
 
 # TODO: change this to the path where you downloaded (and extracted) the dataset
-DATASET_PATH = Path.home() / '3rd_clvision_challenge' / 'demo_dataset'
-
-# Don't change this (unless you want to experiment with different class orders)
-# Note: it won't be possible to change the class order in the real challenge
-CLASS_ORDER_SEED = DEFAULT_DEMO_CLASS_ORDER_SEED
+DATASET_PATH = Path.home() / '3rd_clvision_challenge' / 'challenge'
 
 
 def main(args):
@@ -87,9 +82,8 @@ def main(args):
     # ---------
 
     # --- BENCHMARK CREATION
-    benchmark = demo_classification_benchmark(
+    benchmark = challenge_classification_benchmark(
         dataset_path=DATASET_PATH,
-        class_order_seed=CLASS_ORDER_SEED,
         train_transform=train_transform,
         eval_transform=eval_transform
     )
@@ -110,7 +104,9 @@ def main(args):
     # Many mainstream continual learning approaches are available as plugins:
     # https://avalanche-api.continualai.org/en/latest/training.html#training-plugins
     #
-    mandatory_plugins = [ClassificationOutputExporter('./track1_results')]
+    mandatory_plugins = [
+        ClassificationOutputExporter(benchmark, save_folder='./track1_results')
+    ]
     plugins: List[SupervisedPlugin] = [
         # ...
     ] + mandatory_plugins
@@ -119,22 +115,22 @@ def main(args):
     # --- METRICS AND LOGGING
     evaluator = EvaluationPlugin(
         accuracy_metrics(
-            minibatch=False,
-            epoch=True,
-            experience=True,
-            stream=True
+            epoch=True
         ),
         loss_metrics(
             minibatch=False,
-            epoch=True,
-            experience=True,
-            stream=True,
+            epoch_running=True
         ),
-        confusion_matrix_metrics(stream=True),
+        # May be useful if using a validation stream
+        # confusion_matrix_metrics(stream=True),
         timing_metrics(
             experience=True, stream=True
         ),
-        loggers=[InteractiveLogger()],
+        loggers=[InteractiveLogger(),
+                 TensorboardLogger(
+                     tb_log_dir='./log/track_inst_cls/exp_' +
+                                datetime.datetime.now().isoformat())
+                 ],
     )
     # ---------
 
@@ -158,12 +154,12 @@ def main(args):
         print("Start of experience: ", experience.current_experience)
         print("Current Classes: ", experience.classes_in_this_experience)
 
-        cl_strategy.train(experience, num_workers=4)
+        cl_strategy.train(experience, num_workers=10, persistent_workers=True)
         print("Training completed")
 
-        print("Computing accuracy on the growing test set")
-        exp_id = experience.current_experience
-        cl_strategy.eval(benchmark.test_stream[:exp_id+1], num_workers=4)
+        print("Computing accuracy on the complete test set")
+        cl_strategy.eval(benchmark.test_stream, num_workers=10,
+                         persistent_workers=True)
 
 
 if __name__ == "__main__":
