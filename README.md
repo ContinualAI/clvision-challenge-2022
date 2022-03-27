@@ -48,7 +48,7 @@ The aforementioned steps should be OS-agnostic. However, we recommend setting up
 ## Object Classification Training Template
 The starting template for the object classification track is based on the tried and tested strategies offered by Avalanche.
 
-In particular, the starting template can be found in [`starting_template_track1.py`](starting_template_track1.py). The 
+In particular, the starting template can be found in [`starting_template_track1.py`](starting_template_instance_classification.py). The 
 default template offers a working train/eval loop that uses the
 [Naive](https://avalanche-api.continualai.org/en/latest/generated/avalanche.training.Naive.html) strategy.
 
@@ -60,7 +60,7 @@ This should be taken as the lower bound for a solution. This means that the basi
 We suggest you to study the [From Zero To Hero tutorials](https://avalanche.continualai.org/from-zero-to-hero-tutorial/01_introduction) to learn about Avalanche.
 
 ## Object Detection Training Template
-The starting point for the detection tracks is [`starting_template_track2.py`](starting_template_track2.py).
+The starting point for the detection tracks is [`starting_template_track2.py`](starting_template_category_detection.py).
 That entry point uses the ([DetectionTemplate](devkit_tools/templates/detection_template.py)) template, which is the template you should customize 
 to implement your CL strategy.
 
