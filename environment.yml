@@ -14,17 +14,18 @@ channels:
 - conda-forge
 - pytorch
 dependencies:
+- pip
 - psutil
 - conda-forge::gputil
+- wandb
+- tensorboard
 - scikit-learn
 - matplotlib
 - numpy
 - conda-forge::quadprog
 - tqdm
-- wandb
-- tensorboard
 - conda-forge::pycocotools
-- pip
+- conda-forge::torchmetrics
 - python=3.9
 - pytorch::pytorch>=1.8
 - pytorch::torchvision
