@@ -1,4 +1,5 @@
-from typing import List, TypedDict, Any
+from typing import List, Any
+from typing_extensions import TypedDict
 
 
 class EgoObjectsCategory(TypedDict):
