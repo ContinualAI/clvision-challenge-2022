@@ -162,7 +162,8 @@ def main(args):
     # ---------
 
     # --- METRICS AND LOGGING
-    mandatory_metrics = [EgoMetrics(save_folder='./track2_results')]
+    mandatory_metrics = [EgoMetrics(save_folder='./track2_results',
+                                    filename_prefix='track2_output')]
     evaluator = EvaluationPlugin(
         mandatory_metrics,
         timing_metrics(
