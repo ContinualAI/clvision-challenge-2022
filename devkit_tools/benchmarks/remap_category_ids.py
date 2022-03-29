@@ -12,7 +12,8 @@ def make_compact_category_ids_mapping(
             raise ValueError(
                 'Train and test datasets must contain the same categories!')
 
-    return list(sorted(train_category_ids))
+    # 0 is added to consider the background ID
+    return [0] + list(sorted(train_category_ids))
 
 
 def remap_category_ids(ego_api: EgoObjects, categories_id_mapping: List[int]):

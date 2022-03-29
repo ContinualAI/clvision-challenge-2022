@@ -10,7 +10,7 @@
 ################################################################################
 
 """
-Starting template for the 1st challenge track (object classification)
+Starting template for the "object classification - instances" track
 
 Mostly based on Avalanche's "getting_started.py" example.
 

@@ -10,7 +10,7 @@
 ################################################################################
 
 """
-Starting template for the "object detection - categories" track
+Starting template for the "object detection - instances" track
 
 Mostly based on Avalanche's "getting_started.py" example.
 
@@ -45,7 +45,8 @@ from avalanche.training.plugins import EvaluationPlugin, LRSchedulerPlugin
 from avalanche.training.supervised.naive_object_detection import \
     ObjectDetectionTemplate
 from devkit_tools.benchmarks import demo_detection_benchmark, \
-    challenge_category_detection_benchmark
+    challenge_category_detection_benchmark, \
+    challenge_instance_detection_benchmark
 from devkit_tools.metrics.detection_output_exporter import EgoMetrics
 from devkit_tools.metrics.dictionary_loss import dict_loss_metrics
 
@@ -89,7 +90,7 @@ def main(args):
     # ---------
 
     # --- BENCHMARK CREATION
-    benchmark = challenge_category_detection_benchmark(
+    benchmark = challenge_instance_detection_benchmark(
         dataset_path=DATASET_PATH,
         train_transform=train_transform,
         eval_transform=eval_transform
