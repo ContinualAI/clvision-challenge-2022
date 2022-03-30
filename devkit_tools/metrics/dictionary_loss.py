@@ -138,11 +138,12 @@ class DictLossPluginMetric(ExtendedGenericPluginMetric[Dict[str, float]]):
 
     This metric works on the 'train' phase only.
     """
-    def __init__(self, reset_at, emit_at):
+    def __init__(self, reset_at, emit_at, *, dictionary_name='loss_dict'):
         self._dict_loss = DictionaryLoss()
         super(DictLossPluginMetric, self).__init__(
             self._dict_loss, reset_at, emit_at, mode='train'
         )
+        self.dictionary_name = dictionary_name
 
     def reset(self, strategy=None) -> None:
         if self._reset_at == "stream" or strategy is None:
@@ -166,7 +167,8 @@ class DictLossPluginMetric(ExtendedGenericPluginMetric[Dict[str, float]]):
         else:
             task_label = task_labels[0]
         self._dict_loss.update(
-            strategy.loss_dict, patterns=len(strategy.mb_y),
+            getattr(strategy, self.dictionary_name),
+            patterns=len(strategy.mb_y),
             task_label=task_label
         )
 
@@ -184,12 +186,13 @@ class DictMinibatchLoss(DictLossPluginMetric):
     :class:`DictEpochLoss` instead.
     """
 
-    def __init__(self):
+    def __init__(self, dictionary_name='loss_dict'):
         """
         Creates an instance of the DictMinibatchLoss metric.
         """
         super().__init__(
-            reset_at="iteration", emit_at="iteration"
+            reset_at="iteration", emit_at="iteration",
+            dictionary_name=dictionary_name
         )
 
     def __str__(self):
@@ -206,13 +209,14 @@ class DictEpochLoss(DictLossPluginMetric):
     the overall number of patterns encountered in that epoch.
     """
 
-    def __init__(self):
+    def __init__(self, dictionary_name='loss_dict'):
         """
         Creates an instance of the DictEpochLoss metric.
         """
 
         super().__init__(
-            reset_at="epoch", emit_at="epoch"
+            reset_at="epoch", emit_at="epoch",
+            dictionary_name=dictionary_name
         )
 
     def __str__(self):
@@ -230,13 +234,14 @@ class DictRunningEpochLoss(DictLossPluginMetric):
     The metric resets its state after each training epoch.
     """
 
-    def __init__(self):
+    def __init__(self, dictionary_name='loss_dict'):
         """
         Creates an instance of the RunningEpochLoss metric.
         """
 
         super().__init__(
-            reset_at="epoch", emit_at="iteration"
+            reset_at="epoch", emit_at="iteration",
+            dictionary_name=dictionary_name
         )
 
     def __str__(self):
@@ -248,6 +253,7 @@ def dict_loss_metrics(
     minibatch=False,
     epoch=False,
     epoch_running=False,
+    dictionary_name='loss_dict'
 ) -> List[PluginMetric]:
     """
     Helper method that can be used to obtain the desired set of
@@ -259,19 +265,20 @@ def dict_loss_metrics(
         the dictionary of epoch losses at training time.
     :param epoch_running: If True, will return a metric able to log
         the dictionary of running epoch losses at training time.
+    :param dictionary_name: The name of the dictionary to monitor.
 
     :return: A list of plugin metrics.
     """
 
     metrics = []
     if minibatch:
-        metrics.append(DictMinibatchLoss())
+        metrics.append(DictMinibatchLoss(dictionary_name=dictionary_name))
 
     if epoch:
-        metrics.append(DictEpochLoss())
+        metrics.append(DictEpochLoss(dictionary_name=dictionary_name))
 
     if epoch_running:
-        metrics.append(DictRunningEpochLoss())
+        metrics.append(DictRunningEpochLoss(dictionary_name=dictionary_name))
 
     return metrics
 
