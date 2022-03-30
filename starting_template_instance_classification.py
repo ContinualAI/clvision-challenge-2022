@@ -134,6 +134,21 @@ def main(args):
     # ---------
 
     # --- CREATE THE STRATEGY INSTANCE
+    # In Avalanche, you can customize the training loop in 3 ways:
+    #   1. Adapt the make_train_dataloader, make_optimizer, forward,
+    #   criterion, backward, optimizer_step (and other) functions. This is the
+    #   clean way to do things!
+    #   2. Change the loop itself by reimplementing training_epoch or even
+    #   _train_exp (not recommended).
+    #   3. Create a Plugin that, by implementing the proper callbacks,
+    #   can modify the behavior of the strategy.
+    #  -------------
+    #  Consider that popular strategies (EWC, LwF, Replay) are implemented
+    #  as plugins. However, writing a plugin from scratch may be a tad
+    #  tedious. For the challenge, we recommend going with the 1st option.
+    #  In particular, you can create a subclass of the SupervisedTemplate
+    #  (Naive is mostly an alias for the SupervisedTemplate) and override only
+    #  the methods required to implement your solution.
     cl_strategy = Naive(
         model,
         SGD(model.parameters(), lr=0.001, momentum=0.9),
