@@ -102,11 +102,6 @@ def main(args):
     model = torchvision.models.detection.fasterrcnn_resnet50_fpn(
         pretrained=True)
 
-    # By disabling the grad on current params, only the box predictor is tuned
-    # (because it's created later, in the next few lines of code)
-    # for p in model.parameters():
-    #     p.requires_grad = False
-
     num_classes = benchmark.n_classes + 1  # N classes + background
     in_features = model.roi_heads.box_predictor.cls_score.in_features
     model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
@@ -145,7 +140,6 @@ def main(args):
     # Avalanche already has a lot of plugins you can use!
     # Many mainstream continual learning approaches are available as plugins:
     # https://avalanche-api.continualai.org/en/latest/training.html#training-plugins
-    #
 
     # Note on LRSchedulerPlugin
     # Consider that scheduler.step() may be called after each epoch or

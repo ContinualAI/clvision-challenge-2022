@@ -103,7 +103,6 @@ def main(args):
     # Avalanche already has a lot of plugins you can use!
     # Many mainstream continual learning approaches are available as plugins:
     # https://avalanche-api.continualai.org/en/latest/training.html#training-plugins
-    #
     mandatory_plugins = [
         ClassificationOutputExporter(benchmark, save_folder='./track1_results')
     ]
