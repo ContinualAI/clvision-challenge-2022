@@ -12,7 +12,8 @@ def make_compact_category_ids_mapping(
             raise ValueError(
                 'Train and test datasets must contain the same categories!')
 
-    return list(sorted(train_category_ids))
+    # 0 is added to consider the background ID
+    return [0] + list(sorted(train_category_ids))
 
 
 def remap_category_ids(ego_api: EgoObjects, categories_id_mapping: List[int]):
@@ -20,9 +21,9 @@ def remap_category_ids(ego_api: EgoObjects, categories_id_mapping: List[int]):
     Remaps the category IDs by modifying the API object in-place.
 
     :param ego_api: The API object to adapt.
-    :param categories_id_mapping: The cateogry mapping. It must define a
+    :param categories_id_mapping: The category mapping. It must define a
         mapping from the to-be-used-id to the real category id so that:
-        real_cat_id = categories_id_mapping[mapped_id].
+        `real_cat_id = categories_id_mapping[mapped_id]`.
     """
     reversed_mapping = dict()
     for mapped_id, real_id in enumerate(categories_id_mapping):
@@ -35,6 +36,8 @@ def remap_category_ids(ego_api: EgoObjects, categories_id_mapping: List[int]):
 
     for ann_dict in dataset_json['annotations']:
         ann_dict['category_id'] = reversed_mapping[ann_dict['category_id']]
+
+    ego_api.recreate_index()
 
 
 __all__ = [

@@ -1,4 +1,5 @@
-from typing import List, TypedDict, Any
+from typing import List, Any
+from typing_extensions import TypedDict
 
 
 class EgoObjectsCategory(TypedDict):
@@ -14,13 +15,14 @@ class EgoObjectsImage(TypedDict):
     height: int
     width: int
     url: str
-    gaia_id: Any  # Internal, ignore it
+    gaia_id: int  # Internal, ignore it
     timestamp: List[float]
     stream_ids: List[str]
     group_id: str
     frame_id: int
     main_category: str
     main_category_instance_ids: List[int]
+    video_id: str
     # date_captured: str
     # neg_category_ids: List[int]
     # license: int
