@@ -1,6 +1,18 @@
+# For the Avalanche adaptation:
+################################################################################
+# Copyright (c) 2022 ContinualAI                                               #
+# Copyrights licensed under the MIT License.                                   #
+# See the accompanying LICENSE file for terms.                                 #
+#                                                                              #
+# Date: 25-03-2022                                                             #
+# Author: Lorenzo Pellegrini                                                   #
+#                                                                              #
+# E-mail: contact@continualai.org                                              #
+# Website: www.continualai.org                                                 #
+################################################################################
+
 import copy
 import itertools
-import logging
 from typing import List
 
 import numpy as np
@@ -12,9 +24,18 @@ from ego_objects import EgoObjects, EgoObjectsResults, EgoObjectsEval
 
 
 class EgoEvaluator:
+    """
+    Defines an evaluator for the EgoObjects dataset.
+
+    This evaluator is usually used through a metric returned by
+    :func:`make_ego_objects_metrics`.
+
+    This mostly acts a wrapper around :class:`EgoObjectsEval` class.
+    """
     def __init__(self, ego_gt: EgoObjects, iou_types: List[str]):
         assert isinstance(iou_types, (list, tuple))
         self.ego_gt = ego_gt
+
         self.iou_types = iou_types
         self.img_ids = []
         self.predictions = []
@@ -69,7 +90,9 @@ class EgoEvaluator:
                     ego_results = all_preds
 
                 ego_results = EgoObjectsResults(
-                    gt_subset, ego_results, max_dets=max_dets_per_image)
+                    gt_subset,
+                    ego_results,
+                    max_dets=max_dets_per_image)
                 ego_eval = EgoObjectsEval(gt_subset, ego_results, iou_type)
                 ego_eval.params.img_ids = list(set(eval_imgs))
                 ego_eval.run()
@@ -80,7 +103,16 @@ class EgoEvaluator:
         if dist.is_initialized():
             dist.barrier()
 
-        return self.ego_eval_per_iou
+        result_dict = None
+        if self.ego_eval_per_iou is not None:
+            result_dict = dict()
+            for iou, eval_data in self.ego_eval_per_iou.items():
+                result_dict[iou] = dict()
+                for key in eval_data.results:
+                    value = eval_data.results[key]
+                    result_dict[iou][key] = value
+
+        return result_dict
 
     def summarize(self):
         if self.ego_eval_per_iou is not None:
@@ -159,30 +191,14 @@ class EgoEvaluator:
                 subset_anns.append(ann)
         subset['annotations'] = subset_anns
 
-        return DictEgo(subset)
-
-
-class DictEgo(EgoObjects):
-    """
-    Child class of EgoObjects that allows for the creation of EgoObjects
-    objects from a dictionary.
-    """
-
-    def __init__(self, annotation_dict):
-        """Class for reading and visualizing annotations.
-        Args:
-            annotation_dict (dict): annotations
-        """
-        self.logger = logging.getLogger(__name__)
-        self.dataset = annotation_dict
-
-        assert (
-                type(self.dataset) == dict
-        ), "Annotation file format {} not supported.".format(
-            type(self.dataset))
-        self._create_index()
+        return EgoObjects('', annotation_dict=subset)
 
 
 def convert_to_xywh(boxes):
     xmin, ymin, xmax, ymax = boxes.unbind(1)
     return torch.stack((xmin, ymin, xmax - xmin, ymax - ymin), dim=1)
+
+
+__all__ = [
+    'EgoEvaluator'
+]

@@ -28,11 +28,9 @@ The template is organized as follows:
 import argparse
 import datetime
 import logging
-import random
 from pathlib import Path
 from typing import List
 
-import numpy as np
 import torch
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
@@ -44,11 +42,9 @@ from avalanche.logging import InteractiveLogger, TensorboardLogger
 from avalanche.training.plugins import EvaluationPlugin, LRSchedulerPlugin
 from avalanche.training.supervised.naive_object_detection import \
     ObjectDetectionTemplate
-from devkit_tools.benchmarks import demo_detection_benchmark, \
-    challenge_category_detection_benchmark
-from devkit_tools.metrics.detection_output_exporter import EgoMetrics
+from devkit_tools.benchmarks import challenge_category_detection_benchmark
+from devkit_tools.metrics.detection_output_exporter import make_ego_objects_metrics
 from devkit_tools.metrics.dictionary_loss import dict_loss_metrics
-
 from examples.tvdetection.transforms import RandomHorizontalFlip, ToTensor
 
 # TODO: change this to the path where you downloaded (and extracted) the dataset
@@ -156,8 +152,10 @@ def main(args):
     # ---------
 
     # --- METRICS AND LOGGING
-    mandatory_metrics = [EgoMetrics(save_folder='./track2_results',
-                                    filename_prefix='track2_output')]
+    mandatory_metrics = [make_ego_objects_metrics(
+        save_folder='./category_detection_results',
+        filename_prefix='track2_output')]
+
     evaluator = EvaluationPlugin(
         mandatory_metrics,
         timing_metrics(
@@ -200,7 +198,7 @@ def main(args):
     for experience in benchmark.train_stream:
         print("Start of experience: ", experience.current_experience)
 
-        cl_strategy.train(experience, num_workers=10)
+        cl_strategy.train(experience, num_workers=10, persistent_workers=True)
         print("Training completed")
 
         print("Computing accuracy on the full test set")

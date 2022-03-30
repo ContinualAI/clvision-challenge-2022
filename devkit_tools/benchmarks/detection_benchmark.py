@@ -49,7 +49,7 @@ def challenge_category_detection_benchmark(
     :param test_json_name: The name of the json file containing the test
         set annotations.
     :param n_exps: The number of experiences in the training set.
-    :return: The classification benchmark.
+    :return: The category detection benchmark.
     """
 
     # Use the classification benchmark creator to generate the correct order
@@ -202,7 +202,6 @@ def challenge_instance_detection_benchmark(
         test_json_name=None,
         n_exps=CHALLENGE_DETECTION_EXPERIENCES):
     """
-    TODO: doc
     Creates the challenge instance detection benchmark.
 
     Please don't change this code. You are free to customize the dataset
@@ -219,7 +218,7 @@ def challenge_instance_detection_benchmark(
     :param test_json_name: The name of the json file containing the test
         set annotations.
     :param n_exps: The number of experiences in the training set.
-    :return: The classification benchmark.
+    :return: The instance detection benchmark.
     """
 
     if train_json_name is None:

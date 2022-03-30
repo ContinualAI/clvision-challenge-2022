@@ -3,8 +3,7 @@ from pathlib import Path
 from typing import Union
 from typing_extensions import Literal
 
-from avalanche.benchmarks import nc_benchmark, dataset_benchmark, \
-    GenericCLScenario
+from avalanche.benchmarks import nc_benchmark, dataset_benchmark
 from avalanche.benchmarks.utils import AvalancheDataset
 from devkit_tools import ChallengeClassificationDataset
 from devkit_tools.challenge_constants import \
@@ -56,7 +55,7 @@ def challenge_classification_benchmark(
         a single test set. Defaults to True.
     :param remainder_classes_allocation: How to manage the remainder classes
         (in the case that  overall_classes % n_exps > 0). Default to 'exp0'.
-    :return: The classification benchmark.
+    :return: The instance classification benchmark.
     """
 
     base_transforms = dict(

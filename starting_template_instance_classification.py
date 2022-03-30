@@ -104,7 +104,7 @@ def main(args):
     # Many mainstream continual learning approaches are available as plugins:
     # https://avalanche-api.continualai.org/en/latest/training.html#training-plugins
     mandatory_plugins = [
-        ClassificationOutputExporter(benchmark, save_folder='./track1_results')
+        ClassificationOutputExporter(benchmark, save_folder='./instance_classification_results')
     ]
     plugins: List[SupervisedPlugin] = [
         # ...

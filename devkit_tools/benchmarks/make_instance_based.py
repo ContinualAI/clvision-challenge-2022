@@ -37,7 +37,7 @@ def make_instance_based(ego_api: EgoObjects):
 
     for cat_id in unique_object_ids_sorted[1:]:  # Exclude the background
         new_cat_dict = dict(
-            id=cat_id,
+            id=reversed_mapping[cat_id],
             name=f'Object{cat_id}',
             image_count=img_count[cat_id],
             instance_count=img_count[cat_id]
