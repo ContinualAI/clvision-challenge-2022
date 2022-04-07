@@ -9,9 +9,11 @@ The Slack channel #3rd_clvision_challenge is now open in the ContinualAI Slack: 
 **We are gathering feedback about the devkit.** Join the Slack channel or open an issue directly on this repo!
 
 **Updates:**
-- 07/04/2022: Support for the creation of a validation stream. The number of videos per class (instance or category, 
-depending on the track) to move from the "train" to the "valid" stream can be configured as a parameter of the
-benchmark creation procedure.
+- 07/04/2022
+  - Support for the creation of a **validation stream**. The number of videos per class (instance or category, 
+  depending on the track) to move from the "train" to the "valid" stream can be configured as a parameter of the
+  benchmark creation procedure.
+  - Annotation 127172 (area==0) is now automatically ignored.
 
 ## Getting started
 
