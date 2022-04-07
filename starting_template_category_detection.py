@@ -16,13 +16,17 @@ Mostly based on Avalanche's "getting_started.py" example.
 
 The template is organized as follows:
 - The template is split in sections (CONFIG, TRANSFORMATIONS, ...) that can be
-    freely modified (apart from the BENCHMARK CREATION one).
+    freely modified.
 - Don't remove the mandatory metric (in charge of storing the test output).
 - You will write most of the logic as a Strategy or as a Plugin. By default,
     the Naive (plain fine tuning) strategy is used.
 - The train/eval loop should be left as it is.
 - The Naive strategy already has a default logger + the detection metrics. You
     are free to add more metrics or change the logger.
+- The use of Avalanche training and logging code is not mandatory. However,
+    you are required to use the given benchmark generation procedure. If not
+    using Avalanche, make sure you are following the same train/eval loop and
+    please make sure you are able to export the output in the expected format.
 """
 
 import argparse
@@ -43,7 +47,8 @@ from avalanche.training.plugins import EvaluationPlugin, LRSchedulerPlugin
 from avalanche.training.supervised.naive_object_detection import \
     ObjectDetectionTemplate
 from devkit_tools.benchmarks import challenge_category_detection_benchmark
-from devkit_tools.metrics.detection_output_exporter import make_ego_objects_metrics
+from devkit_tools.metrics.detection_output_exporter import \
+    make_ego_objects_metrics
 from devkit_tools.metrics.dictionary_loss import dict_loss_metrics
 from examples.tvdetection.transforms import RandomHorizontalFlip, ToTensor
 
@@ -88,7 +93,8 @@ def main(args):
     benchmark = challenge_category_detection_benchmark(
         dataset_path=DATASET_PATH,
         train_transform=train_transform,
-        eval_transform=eval_transform
+        eval_transform=eval_transform,
+        n_validation_videos=0
     )
     # ---------
 
@@ -203,16 +209,36 @@ def main(args):
         eval_mb_size=train_mb_size,
         device=device,
         plugins=plugins,
-        evaluator=evaluator
+        evaluator=evaluator,
+        eval_every=0 if 'valid' in benchmark.streams else -1
     )
     # ---------
 
     # TRAINING LOOP
     print("Starting experiment...")
     for experience in benchmark.train_stream:
-        print("Start of experience: ", experience.current_experience)
+        current_experience_id = experience.current_experience
+        print("Start of experience: ", current_experience_id)
 
-        cl_strategy.train(experience, num_workers=10, persistent_workers=True)
+        data_loader_arguments = dict(
+            num_workers=10,
+            persistent_workers=True
+        )
+
+        if 'valid' in benchmark.streams:
+            # Each validation experience is obtained from the training
+            # experience directly. We can't use the whole validation stream
+            # (because that means accessing future or past data).
+            # For this reason, validation is done only on
+            # `valid_stream[current_experience_id]`.
+            cl_strategy.train(
+                experience,
+                eval_streams=[benchmark.valid_stream[current_experience_id]],
+                **data_loader_arguments)
+        else:
+            cl_strategy.train(
+                experience,
+                **data_loader_arguments)
         print("Training completed")
 
         print("Computing accuracy on the full test set")

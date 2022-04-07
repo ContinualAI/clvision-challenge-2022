@@ -50,6 +50,14 @@ def challenge_classification_benchmark(
     Note: calling this method may change the global state of random number
     generators (PyTorch, NumPy, Python's "random").
 
+    For the validation datasets, test transformations are used. In addition,
+    the transforms group will be again enforced as "eval" in the strategy (in
+    the `eval_dataset_adaptation` method). Setting the initial group to eval
+    now allows for a smoother use of these datasets by participants that
+    do not plan to use Avalanche strategies. One can use the validation set
+    with training transformations by obtaining a new view of the dataset as
+    follows: `val_set_with_train_transforms = val_dataset.train()`.
+
     :param dataset_path: The dataset path.
     :param class_order_seed: The seed defining the order of classes.
         Use DEFAULT_CHALLENGE_CLASS_ORDER_SEED to use the reference order.

@@ -31,13 +31,26 @@ def challenge_category_detection_benchmark(
         eval_transform=None,
         train_json_name=None,
         test_json_name=None,
-        n_exps=CHALLENGE_DETECTION_EXPERIENCES):
+        n_exps=CHALLENGE_DETECTION_EXPERIENCES,
+        n_validation_videos=0,
+        validation_video_selection_seed=1337):
     """
     Creates the challenge category detection benchmark.
 
     Please don't change this code. You are free to customize the dataset
     path and jsons paths, the train_transform, and eval_transform parameters.
     Don't change other parameters or the code.
+
+    Note: calling this method may change the global state of random number
+    generators (PyTorch, NumPy, Python's "random").
+
+    For the validation datasets, test transformations are used. In addition,
+    the transforms group will be again enforced as "eval" in the strategy (in
+    the `eval_dataset_adaptation` method). Setting the initial group to eval
+    now allows for a smoother use of these datasets by participants that
+    do not plan to use Avalanche strategies. One can use the validation set
+    with training transformations by obtaining a new view of the dataset as
+    follows: `val_set_with_train_transforms = val_dataset.train()`.
 
     :param dataset_path: The dataset path.
     :param class_order_seed: The seed defining the order of classes.
@@ -49,8 +62,18 @@ def challenge_category_detection_benchmark(
     :param test_json_name: The name of the json file containing the test
         set annotations.
     :param n_exps: The number of experiences in the training set.
+    :param n_validation_videos: How many validation videos per category.
+        Defaults to 0, which means that no validation stream will be created.
+    :param validation_video_selection_seed: The seed to use when selecting
+        videos to allocate to the validation stream.
     :return: The category detection benchmark.
     """
+
+    if train_json_name is None:
+        train_json_name = DEFAULT_CHALLENGE_TRAIN_JSON
+
+    if test_json_name is None:
+        test_json_name = DEFAULT_CHALLENGE_TEST_JSON
 
     # Use the classification benchmark creator to generate the correct order
     cls_benchmark: NCScenario = challenge_classification_benchmark(
@@ -60,16 +83,13 @@ def challenge_category_detection_benchmark(
         test_json_name=test_json_name,
         instance_level=False,
         n_exps=n_exps,
-        unlabeled_test_set=False
+        unlabeled_test_set=False,
+        n_validation_videos=n_validation_videos,
+        validation_video_selection_seed=validation_video_selection_seed
     )
 
     # Create aligned datasets
-    if train_json_name is None:
-        train_json_name = DEFAULT_CHALLENGE_TRAIN_JSON
     train_ego_api = EgoObjects(str(Path(dataset_path) / train_json_name))
-
-    if test_json_name is None:
-        test_json_name = DEFAULT_CHALLENGE_TEST_JSON
     test_ego_api = EgoObjects(str(Path(dataset_path) / test_json_name))
 
     train_dataset = ChallengeClassificationDataset(
@@ -103,6 +123,16 @@ def challenge_category_detection_benchmark(
     test_img_ids = []
     for instance_idx in test_order:
         test_img_ids.append(test_dataset.img_ids[instance_idx])
+
+    valid_img_ids = None
+    if 'valid' in cls_benchmark.streams:
+        valid_order = cls_benchmark.valid_exps_patterns_assignment
+        valid_img_ids = []
+        for exp_id in range(len(valid_order)):
+            img_id_in_exp = []
+            for instance_idx in valid_order[exp_id]:
+                img_id_in_exp.append(train_dataset.img_ids[instance_idx])
+            valid_img_ids.append(img_id_in_exp)
 
     base_transforms = dict(
         train=(CHALLENGE_DETECTION_FORCED_TRANSFORMS, None),
@@ -122,6 +152,7 @@ def challenge_category_detection_benchmark(
     remap_category_ids(train_ego_api, categories_id_mapping)
     remap_category_ids(test_ego_api, categories_id_mapping)
 
+    # Create the training datasets
     train_exps = []
     for exp_id, exp_img_ids in enumerate(train_img_ids):
         exp_dataset = ChallengeDetectionDataset(
@@ -144,6 +175,7 @@ def challenge_category_detection_benchmark(
 
         train_exps.append(avl_exp_dataset)
 
+    # Create the test dataset
     test_exps = []
     exp_dataset = ChallengeDetectionDataset(
         dataset_path,
@@ -165,8 +197,35 @@ def challenge_category_detection_benchmark(
 
     test_exps.append(avl_exp_dataset)
 
+    # Create the validation datasets
+    valid_exps = None
+    if valid_img_ids is not None:
+        valid_exps = []
+        for exp_id, exp_img_ids in enumerate(valid_img_ids):
+            exp_dataset = ChallengeDetectionDataset(
+                dataset_path,
+                train=True,
+                ego_api=train_ego_api,
+                img_ids=exp_img_ids
+            )
+
+            avl_exp_dataset = AvalancheDataset(
+                exp_dataset,
+                transform_groups=base_transforms,
+                initial_transform_group='eval'
+            ).freeze_transforms(
+            ).add_transforms_to_group(
+                'train', transform=train_transform
+            ).add_transforms_to_group(
+                'eval', transform=eval_transform
+            )
+
+            valid_exps.append(avl_exp_dataset)
+
     all_cat_ids = set(train_ego_api.get_cat_ids())
     # all_cat_ids.union(test_ego_api.get_cat_ids())
+
+    stream_definitions = dict()
 
     train_def = StreamUserDef(
         exps_data=train_exps,
@@ -174,6 +233,7 @@ def challenge_category_detection_benchmark(
         origin_dataset=None,
         is_lazy=False
     )
+    stream_definitions['train'] = train_def
 
     test_def = StreamUserDef(
         exps_data=test_exps,
@@ -181,13 +241,20 @@ def challenge_category_detection_benchmark(
         origin_dataset=None,
         is_lazy=False
     )
+    stream_definitions['test'] = test_def
+
+    if valid_exps is not None:
+        valid_def = StreamUserDef(
+            exps_data=valid_exps,
+            exps_task_labels=[0 for _ in range(len(valid_exps))],
+            origin_dataset=None,
+            is_lazy=False
+        )
+        stream_definitions['valid'] = valid_def
 
     return DetectionCLScenario(
         n_classes=len(all_cat_ids),
-        stream_definitions={
-            'train': train_def,
-            'test': test_def
-        },
+        stream_definitions=stream_definitions,
         complete_test_set_only=True
     )
 
@@ -200,13 +267,26 @@ def challenge_instance_detection_benchmark(
         eval_transform=None,
         train_json_name=None,
         test_json_name=None,
-        n_exps=CHALLENGE_DETECTION_EXPERIENCES):
+        n_exps=CHALLENGE_DETECTION_EXPERIENCES,
+        n_validation_videos=0,
+        validation_video_selection_seed=1337):
     """
     Creates the challenge instance detection benchmark.
 
     Please don't change this code. You are free to customize the dataset
     path and jsons paths, the train_transform, and eval_transform parameters.
     Don't change other parameters or the code.
+
+    Note: calling this method may change the global state of random number
+    generators (PyTorch, NumPy, Python's "random").
+
+    For the validation datasets, test transformations are used. In addition,
+    the transforms group will be again enforced as "eval" in the strategy (in
+    the `eval_dataset_adaptation` method). Setting the initial group to eval
+    now allows for a smoother use of these datasets by participants that
+    do not plan to use Avalanche strategies. One can use the validation set
+    with training transformations by obtaining a new view of the dataset as
+    follows: `val_set_with_train_transforms = val_dataset.train()`.
 
     :param dataset_path: The dataset path.
     :param class_order_seed: The seed defining the order of classes.
@@ -218,6 +298,10 @@ def challenge_instance_detection_benchmark(
     :param test_json_name: The name of the json file containing the test
         set annotations.
     :param n_exps: The number of experiences in the training set.
+    :param n_validation_videos: How many validation videos per instance.
+        Defaults to 0, which means that no validation stream will be created.
+    :param validation_video_selection_seed: The seed to use when selecting
+        videos to allocate to the validation stream.
     :return: The instance detection benchmark.
     """
 
@@ -235,7 +319,9 @@ def challenge_instance_detection_benchmark(
         test_json_name=test_json_name,
         instance_level=True,
         n_exps=n_exps,
-        unlabeled_test_set=False
+        unlabeled_test_set=False,
+        n_validation_videos=n_validation_videos,
+        validation_video_selection_seed=validation_video_selection_seed
     )
 
     # Create aligned datasets
@@ -274,6 +360,16 @@ def challenge_instance_detection_benchmark(
     for instance_idx in test_order:
         test_img_ids.append(test_dataset.img_ids[instance_idx])
 
+    valid_img_ids = None
+    if 'valid' in cls_benchmark.streams:
+        valid_order = cls_benchmark.valid_exps_patterns_assignment
+        valid_img_ids = []
+        for exp_id in range(len(valid_order)):
+            img_id_in_exp = []
+            for instance_idx in valid_order[exp_id]:
+                img_id_in_exp.append(train_dataset.img_ids[instance_idx])
+            valid_img_ids.append(img_id_in_exp)
+
     base_transforms = dict(
         train=(CHALLENGE_DETECTION_FORCED_TRANSFORMS, None),
         eval=(CHALLENGE_DETECTION_FORCED_TRANSFORMS, None)
@@ -292,6 +388,7 @@ def challenge_instance_detection_benchmark(
         test_ego_api
     )
 
+    # Create the training datasets
     train_exps = []
     for exp_id, exp_img_ids in enumerate(train_img_ids):
         exp_dataset = ChallengeDetectionDataset(
@@ -314,6 +411,7 @@ def challenge_instance_detection_benchmark(
 
         train_exps.append(avl_exp_dataset)
 
+    # Create the test dataset
     test_exps = []
     exp_dataset = ChallengeDetectionDataset(
         dataset_path,
@@ -335,8 +433,35 @@ def challenge_instance_detection_benchmark(
 
     test_exps.append(avl_exp_dataset)
 
+    # Create the validation datasets
+    valid_exps = None
+    if valid_img_ids is not None:
+        valid_exps = []
+        for exp_id, exp_img_ids in enumerate(valid_img_ids):
+            exp_dataset = ChallengeDetectionDataset(
+                dataset_path,
+                train=True,
+                ego_api=train_ego_api,
+                img_ids=exp_img_ids
+            )
+
+            avl_exp_dataset = AvalancheDataset(
+                exp_dataset,
+                transform_groups=base_transforms,
+                initial_transform_group='eval'
+            ).freeze_transforms(
+            ).add_transforms_to_group(
+                'train', transform=train_transform
+            ).add_transforms_to_group(
+                'eval', transform=eval_transform
+            )
+
+            valid_exps.append(avl_exp_dataset)
+
     all_cat_ids = set(train_ego_api.get_cat_ids())
     # all_cat_ids.union(test_ego_api.get_cat_ids())
+
+    stream_definitions = dict()
 
     train_def = StreamUserDef(
         exps_data=train_exps,
@@ -344,6 +469,7 @@ def challenge_instance_detection_benchmark(
         origin_dataset=None,
         is_lazy=False
     )
+    stream_definitions['train'] = train_def
 
     test_def = StreamUserDef(
         exps_data=test_exps,
@@ -351,14 +477,21 @@ def challenge_instance_detection_benchmark(
         origin_dataset=None,
         is_lazy=False
     )
+    stream_definitions['test'] = test_def
+
+    if valid_exps is not None:
+        valid_def = StreamUserDef(
+            exps_data=valid_exps,
+            exps_task_labels=[0 for _ in range(len(valid_exps))],
+            origin_dataset=None,
+            is_lazy=False
+        )
+        stream_definitions['valid'] = valid_def
 
     return DetectionCLScenario(
         n_classes=len(all_cat_ids),
-        stream_definitions={
-            'train': train_def,
-            'test': test_def
-        },
-        complete_test_set_only=True,
+        stream_definitions=stream_definitions,
+        complete_test_set_only=True
     )
 
 
