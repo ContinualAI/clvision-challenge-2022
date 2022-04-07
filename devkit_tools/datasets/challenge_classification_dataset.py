@@ -1,5 +1,6 @@
+from collections import defaultdict
 from pathlib import Path
-from typing import Union, List
+from typing import Union, List, Dict
 
 import matplotlib.pyplot as plt
 from torchvision.datasets.folder import default_loader
@@ -133,6 +134,50 @@ class ChallengeClassificationDataset(PathsDataset):
             img_triplet[1] = reversed_mapping[img_triplet[1]]
 
         return image_triplets, img_ids_with_main_ann
+
+    @staticmethod
+    def class_to_videos(
+            ego_api: EgoObjects,
+            img_ids: List[int],
+            *,
+            instance_level: bool = True):
+        classes_to_videos: \
+            Dict[Union[int, str], Dict[int, List[int]]] = \
+            defaultdict(lambda: defaultdict(list))
+
+        all_instance_ids = set()
+
+        for img_id in img_ids:
+            img_dict = ego_api.load_imgs(ids=[img_id])[0]
+
+            main_annotations = img_dict['main_category_instance_ids']
+            if len(main_annotations) != 1:
+                continue
+
+            main_annotation_id = main_annotations[0]
+            main_annotation = ego_api.load_anns(ids=[main_annotation_id])[0]
+
+            if instance_level:
+                main_annotation_class = main_annotation['instance_id']
+            else:
+                main_annotation_class = main_annotation['category_id']
+
+            classes_to_videos[main_annotation_class][img_dict[
+                'gaia_id']].append(img_id)
+
+            all_instance_ids.add(main_annotation_class)
+
+        class_label_to_instance_id = list(sorted(all_instance_ids))
+        reversed_mapping = dict()
+        for mapped_id, real_id in enumerate(class_label_to_instance_id):
+            reversed_mapping[real_id] = mapped_id
+
+        remapped_dict = dict()
+        for cls_orig_key, cls_videos in classes_to_videos.items():
+            remapped_key = reversed_mapping[cls_orig_key]
+            remapped_dict[remapped_key] = cls_videos
+
+        return remapped_dict
 
 
 if __name__ == '__main__':

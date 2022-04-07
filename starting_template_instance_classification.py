@@ -16,13 +16,17 @@ Mostly based on Avalanche's "getting_started.py" example.
 
 The template is organized as follows:
 - The template is split in sections (CONFIG, TRANSFORMATIONS, ...) that can be
-    freely modified (apart from the BENCHMARK CREATION one).
+    freely modified.
 - Don't remove the mandatory plugin (in charge of storing the test output).
 - You will write most of the logic as a Strategy or as a Plugin. By default,
     the Naive (plain fine tuning) strategy is used.
 - The train/eval loop should be left as it is.
 - The Naive strategy already has a default logger + the accuracy metric. You
     are free to add more metrics or change the logger.
+- The use of Avalanche training and logging code is not mandatory. However,
+    you are required to use the given benchmark generation procedure. If not
+    using Avalanche, make sure you are following the same train/eval loop and
+    please make sure you are able to export the output in the expected format.
 """
 
 import argparse
@@ -85,7 +89,8 @@ def main(args):
     benchmark = challenge_classification_benchmark(
         dataset_path=DATASET_PATH,
         train_transform=train_transform,
-        eval_transform=eval_transform
+        eval_transform=eval_transform,
+        n_validation_videos=0
     )
     # ---------
 
@@ -104,7 +109,8 @@ def main(args):
     # Many mainstream continual learning approaches are available as plugins:
     # https://avalanche-api.continualai.org/en/latest/training.html#training-plugins
     mandatory_plugins = [
-        ClassificationOutputExporter(benchmark, save_folder='./instance_classification_results')
+        ClassificationOutputExporter(
+            benchmark, save_folder='./instance_classification_results')
     ]
     plugins: List[SupervisedPlugin] = [
         # ...
@@ -114,7 +120,8 @@ def main(args):
     # --- METRICS AND LOGGING
     evaluator = EvaluationPlugin(
         accuracy_metrics(
-            epoch=True
+            epoch=True,
+            stream=True
         ),
         loss_metrics(
             minibatch=False,
@@ -158,17 +165,37 @@ def main(args):
         eval_mb_size=100,
         device=device,
         plugins=plugins,
-        evaluator=evaluator
+        evaluator=evaluator,
+        eval_every=0 if 'valid' in benchmark.streams else -1
     )
     # ---------
 
     # TRAINING LOOP
     print("Starting experiment...")
     for experience in benchmark.train_stream:
-        print("Start of experience: ", experience.current_experience)
+        current_experience_id = experience.current_experience
+        print("Start of experience: ", current_experience_id)
         print("Current Classes: ", experience.classes_in_this_experience)
 
-        cl_strategy.train(experience, num_workers=10, persistent_workers=True)
+        data_loader_arguments = dict(
+            num_workers=10,
+            persistent_workers=True
+        )
+
+        if 'valid' in benchmark.streams:
+            # Each validation experience is obtained from the training
+            # experience directly. We can't use the whole validation stream
+            # (because that means accessing future or past data).
+            # For this reason, validation is done only on
+            # `valid_stream[current_experience_id]`.
+            cl_strategy.train(
+                experience,
+                eval_streams=[benchmark.valid_stream[current_experience_id]],
+                **data_loader_arguments)
+        else:
+            cl_strategy.train(
+                experience,
+                **data_loader_arguments)
         print("Training completed")
 
         print("Computing accuracy on the complete test set")
