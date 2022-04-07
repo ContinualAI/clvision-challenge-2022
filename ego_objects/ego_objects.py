@@ -20,6 +20,8 @@ from ego_objects import EgoObjectsAnnotation, EgoObjectsCategory, \
 
 T = TypeVar('T')
 
+BAD_ANNS = [127172]
+
 
 class EgoObjects:
     def __init__(self, annotation_path, annotation_dict=None):
@@ -43,13 +45,30 @@ class EgoObjects:
         assert (
                 type(self.dataset) == dict
         ), "Annotation file format {} not supported.".format(type(self.dataset))
-        self._fix_areas()
+
+        self._fix_bboxes()
+        self._fix_areas(force_recompute=False)
         self._fix_frequencies()
         self._create_index()
 
-    def _fix_areas(self):
+    def _fix_bboxes(self):
+        to_remove_ann_indices = list()
+        for ann_idx, ann in enumerate(self.dataset["annotations"]):
+            ann_id = ann['id']
+            if ann_id in BAD_ANNS:
+                to_remove_ann_indices.append(ann_idx)
+
+        for to_remove_idx in sorted(to_remove_ann_indices, reverse=True):
+            print('Removed bad annotation',
+                  self.dataset["annotations"][to_remove_idx]['id'])
+            del self.dataset["annotations"][to_remove_idx]
+
+    def _fix_areas(self, force_recompute=False):
         for ann in self.dataset["annotations"]:
-            ann['area'] = ann.get('area', ann['bbox'][2] * ann['bbox'][3])
+            if force_recompute:
+                ann['area'] = ann['bbox'][2] * ann['bbox'][3]
+            else:
+                ann['area'] = ann.get('area', ann['bbox'][2] * ann['bbox'][3])
 
     def _fix_frequencies(self):
         for cat_data in self.dataset["categories"]:
@@ -203,15 +222,17 @@ class EgoObjects:
             save_dir (str): dir to save downloaded images
             img_ids (int array): img ids of images to download
         """
-        imgs = self.load_imgs(img_ids)
+        raise RuntimeError('On-the-fly download is not available yet.')
 
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
-
-        for img in imgs:
-            file_name = os.path.join(save_dir, img["coco_url"].split("/")[-1])
-            if not os.path.exists(file_name):
-                urlretrieve(img["coco_url"], file_name)
+        # imgs = self.load_imgs(img_ids)
+        #
+        # if not os.path.exists(save_dir):
+        #     os.makedirs(save_dir)
+        #
+        # for img in imgs:
+        #     file_name = os.path.join(save_dir, img["coco_url"].split("/")[-1])
+        #     if not os.path.exists(file_name):
+        #         urlretrieve(img["coco_url"], file_name)
 
     def ann_to_rle(self, ann):
         """Convert annotation which can be polygons, uncompressed RLE to RLE.
