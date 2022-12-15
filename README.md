@@ -4,24 +4,12 @@ This is the official starting repository for the **Continual Learning Challenge*
 
 Please refer to the [**challenge website**](https://sites.google.com/view/clvision2022/challenge) for more details!
 
-The Slack channel #3rd_clvision_challenge is now open in the ContinualAI Slack: [join here](https://continualai.slack.com/join/shared_invite/enQtNjQxNDYwMzkxNzk0LTBhYjg2MjM0YTM2OWRkNDYzOGE0ZTIzNDQ0ZGMzNDE3ZGUxNTZmNmM1YzJiYzgwMTkyZDQxYTlkMTI3NzZkNjU#/shared-invite/email).
-
-**We are gathering feedback about the devkit.** Join the Slack channel or open an issue directly on this repo!
-
 **Updates:**
-- 07/04/2022
-  - Support for the creation of a **validation stream**. The number of videos per class (instance or category, 
-  depending on the track) to move from the "train" to the "valid" stream can be configured as a parameter of the
-  benchmark creation procedure.
-  - Annotation 127172 (area==0) is now automatically ignored.
-- 13/04/2022
-  - Solved an issue with output generation for detection tracks.
-  - Fixed the name of metrics of detection tracks.
+
+- The **competition report paper** is available on [arXiv](https://arxiv.org/abs/2212.06833)!
+- **Reports** from the top-3 teams per track are now available under the [`reports`](reports) folder.
 
 ## Getting started
-
-This repo may be updated during the challenge to fix bugs and integrate suggestions from the community, so make sure
-to *check it out from time to time*.
 
 The devkit is based on the [Avalanche library](https://github.com/ContinualAI/avalanche). We warmly recommend looking at the [documentation](https://avalanche.continualai.org/) (especially the ["Zero To Hero tutorials"](https://avalanche.continualai.org/from-zero-to-hero-tutorial/01_introduction)) if this is your first time using it!
 Avalanche is added as a Git submodule of this repository. 
